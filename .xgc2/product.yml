@@ -49,6 +49,7 @@ ownership:
   - /opt/ros/noetic/lib/xgc_session_clock_guard/session_clock_guard_healthcheck
   - /usr/share/xgc2/process-definitions/xgc2-session-clock-guard.json
 release:
-  workflow: ci.yml
+  workflow: session-clock-guard-ci.yml
+  ci_workflow: session-clock-guard-ci.yml
   apt_versions:
     focal: 0.1.0-1

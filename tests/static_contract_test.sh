@@ -134,8 +134,9 @@ for required_arg in policy_file policy_sha256 epoch_id; do
   grep -Eq "<arg name=\"${required_arg}\"[[:space:]]*/>" launch/session_clock_guard.launch
 done
 
-grep -q 'arch: amd64' .github/workflows/ci.yml
-grep -q 'arch: arm64' .github/workflows/ci.yml
+grep -q 'arch: amd64' .github/workflows/session-clock-guard-ci.yml
+grep -q 'arch: arm64' .github/workflows/session-clock-guard-ci.yml
+grep -q 'xgc2_artifact_manifest.py build' .github/workflows/session-clock-guard-ci.yml
 grep -q 'distribution: focal' .xgc2/product.yml
 grep -q 'distro: noetic' .xgc2/product.yml
 grep -q 'ros-noetic-rosgraph-msgs' .xgc2/product.yml

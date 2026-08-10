@@ -41,6 +41,7 @@ docker pull "${DOCKER_IMAGE}"
 docker run --rm \
   -e DEBIAN_FRONTEND=noninteractive \
   -e INSTALL_CHECK="${INSTALL_CHECK}" \
+  -e XGC2_APT_OVERLAY_URL="${XGC2_APT_OVERLAY_URL:-}" \
   -v "${REPO_ROOT}:/workspace/repo:ro" \
   -v "${WORK_DIR}:/workspace/work" \
   -v "${OUTPUT_DIR}:/workspace/out" \
@@ -49,7 +50,7 @@ docker run --rm \
     set -euo pipefail
     export DEBIAN_FRONTEND=noninteractive
 
-    apt-get update
+    /workspace/repo/.xgc2/scripts/configure_xgc2_apt.sh focal
     apt-get install -y --no-install-recommends \
       build-essential \
       dpkg-dev \
