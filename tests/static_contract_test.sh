@@ -17,6 +17,7 @@ command -v grep >/dev/null
 for mode in simulation physical hybrid; do
   config="config/example-${mode}-v24.cfg"
   grep -qx 'schema=xgc.session-clock-guard.config.v2' "${config}"
+  grep -qx 'policy_revision=xgc.session-clock-guard.builtin-policy.v1' "${config}"
   grep -qx 'vrpn.wire_time_resolution_ns=1000' "${config}"
   grep -qx 'delay.measurement_enabled=true' "${config}"
   grep -qx 'delay.timestamp_policy=sample_time' "${config}"

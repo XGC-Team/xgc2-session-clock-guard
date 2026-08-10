@@ -18,6 +18,8 @@ namespace xgc_session_clock_guard {
 namespace {
 
 constexpr const char* kSchema = "xgc.session-clock-guard.config.v2";
+constexpr const char* kBuiltinPolicyRevision =
+    "xgc.session-clock-guard.builtin-policy.v1";
 constexpr std::size_t kMaximumCanonicalPolicyBytes = 1U << 20U;
 constexpr std::size_t kMaximumSessionIdBytes = 64U;
 constexpr std::size_t kMaximumRouteIdentityBytes = 128U;
@@ -211,6 +213,7 @@ bool present(const std::optional<Value>& value) {
 std::vector<std::string> canonicalKeyOrder(const FrozenConfig& config) {
   std::vector<std::string> keys{
       "schema",
+      "policy_revision",
       "session_id",
       "session_contract_sha256",
       "run_mode",
@@ -589,6 +592,7 @@ FrozenConfig FrozenConfigLoader::parse(const std::string& bytes,
 
   const std::set<std::string> scalar_keys{
       "schema",
+      "policy_revision",
       "session_id",
       "session_contract_sha256",
       "run_mode",
@@ -648,6 +652,11 @@ FrozenConfig FrozenConfigLoader::parse(const std::string& bytes,
   config.schema = require(values, "schema");
   if (config.schema != kSchema) {
     throw ConfigError("schema must be exactly " + std::string(kSchema));
+  }
+  config.policy_revision = require(values, "policy_revision");
+  if (config.policy_revision != kBuiltinPolicyRevision) {
+    throw ConfigError("policy_revision must be exactly " +
+                      std::string(kBuiltinPolicyRevision));
   }
   config.session_id = require(values, "session_id");
   if (!isSessionId(config.session_id)) {

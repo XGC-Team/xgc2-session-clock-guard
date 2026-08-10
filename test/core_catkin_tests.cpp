@@ -14,6 +14,7 @@ namespace {
 std::string simulationConfig() {
   return
       "schema=xgc.session-clock-guard.config.v2\n"
+      "policy_revision=xgc.session-clock-guard.builtin-policy.v1\n"
       "session_id=catkin-simulation\n"
       "session_contract_sha256=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n"
       "run_mode=simulation\n"

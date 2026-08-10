@@ -74,6 +74,7 @@ struct Route {
 
 struct FrozenConfig {
   std::string schema;
+  std::string policy_revision;
   std::string session_id;
   std::string session_contract_sha256;
   std::string run_mode;

@@ -139,6 +139,7 @@ class SessionClockGuardNode {
                     << " authority=" << toString(config_.session_time_authority)
                     << " mapping=" << toString(config_.clock_mapping)
                     << " routes=" << config_.routes.size()
+                    << " policy_revision=" << config_.policy_revision
                     << " policy_sha256=" << config_.policy_sha256);
   }
 

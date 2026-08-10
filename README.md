@@ -104,12 +104,13 @@ fail closed.
 
 The config is a canonical flat `key=value` document. Unknown, duplicated,
 missing, reordered, whitespace-padded, malformed, or mode-mismatched fields
-fail startup. The fixed Parameter Asset may supply only policy thresholds, IO
-queue depth, and trusted per-product sampling constants. Session/Core must
-generate `session_id`, contract digest, run mode, authority/mapping pair, and
+fail startup. `policy_revision` must be exactly the built-in
+`xgc.session-clock-guard.builtin-policy.v1`; its thresholds, IO queue depth,
+and trusted per-product sampling constants are owned by the product. Session/Core
+generates `session_id`, contract digest, run mode, authority/mapping pair, and
 every route. `epoch_id` is deliberately not a config key. The product consumes
-only the final digest-verified bytes; the Core materializer is responsible for
-proving that authors cannot override Session-owned fields.
+only the final digest-verified bytes; the Core materializer proves that authors
+cannot override Session-owned fields.
 
 The Guard derives both `epoch-state.json` and `epoch-state.lock` from the
 parent directory of `policy_file`; there is no fourth parameter and no
@@ -147,8 +148,8 @@ The initial fixed per-product timing constants are:
 
 These are materializer inputs, not defaults in the Guard. Before formal field
 use, CI/live evidence must confirm that the packaged source actually publishes
-at the declared cadence; otherwise the fixed Parameter Asset must be revised
-and repinned rather than silently changing the generated policy.
+at the declared cadence; otherwise the built-in policy must receive an explicit
+revision and be repinned rather than silently changing the generated policy.
 
 The common frozen `threshold.startup_lock_timeout_ns` is separate from runtime
 freshness. It is accepted only in `[250000000, 3000000000]`, cannot be below

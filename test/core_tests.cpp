@@ -70,6 +70,7 @@ void replaceAll(std::string* value,
 std::string simulationConfig() {
   return
       "schema=xgc.session-clock-guard.config.v2\n"
+      "policy_revision=xgc.session-clock-guard.builtin-policy.v1\n"
       "session_id=session-simulation-001\n"
       "session_contract_sha256=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n"
       "run_mode=simulation\n"
@@ -98,6 +99,7 @@ std::string simulationConfig() {
 std::string physicalConfig() {
   return
       "schema=xgc.session-clock-guard.config.v2\n"
+      "policy_revision=xgc.session-clock-guard.builtin-policy.v1\n"
       "session_id=session-physical-001\n"
       "session_contract_sha256=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n"
       "run_mode=physical\n"
@@ -131,6 +133,7 @@ std::string physicalConfig() {
 std::string hybridConfig() {
   return
       "schema=xgc.session-clock-guard.config.v2\n"
+      "policy_revision=xgc.session-clock-guard.builtin-policy.v1\n"
       "session_id=session-hybrid-001\n"
       "session_contract_sha256=cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\n"
       "run_mode=hybrid\n"
@@ -374,6 +377,13 @@ void testFrozenModesRoutesAndTopics() {
               "author.session_id=forged\nio.queue_depth=16");
   expectConfigError([&]() { parse(author_identity_override); },
                     "author identity override keys must be unknown and rejected");
+
+  auto wrong_policy_revision = simulationConfig();
+  replaceOnce(&wrong_policy_revision,
+              "policy_revision=xgc.session-clock-guard.builtin-policy.v1",
+              "policy_revision=xgc.session-clock-guard.builtin-policy.v0");
+  expectConfigError([&]() { parse(wrong_policy_revision); },
+                    "unknown built-in policy revision must fail closed");
 
   auto mode_scoped_startup = simulationConfig();
   replaceOnce(&mode_scoped_startup,
