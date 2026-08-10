@@ -1,0 +1,54 @@
+schema: xgc2.product.v1
+id: xgc2-session-clock-guard
+name: XGC2 Session Clock Guard
+version: 0.1.0-1
+kind: ros1-apt
+summary: Fail-closed mode-aware Session authority, VRPN mapper, and canonical route guard.
+groups:
+- ros1
+- communication
+- experiment-runtime
+ros:
+  distro: noetic
+  packages:
+  - xgc_session_clock_guard
+apt:
+  distribution: focal
+  install:
+  - ros-noetic-xgc2-session-clock-guard
+  packages:
+  - ros-noetic-xgc2-session-clock-guard
+  depends:
+  - ros-noetic-geometry-msgs
+  - ros-noetic-message-runtime
+  - ros-noetic-roscpp
+  - ros-noetic-rosgraph-msgs
+  - ros-noetic-roslaunch
+  - ros-noetic-std-msgs
+usage:
+  install: |
+    sudo apt update
+    sudo apt install ros-noetic-xgc2-session-clock-guard
+  smoke_test: |
+    rospack find xgc_session_clock_guard
+    test -x /opt/ros/noetic/lib/xgc_session_clock_guard/session_clock_guard_node
+  notes: |
+    policy_file, policy_sha256, and epoch_id are mandatory trusted Core inputs.
+    The Guard derives canonical regular 0600 epoch-state.json and
+    epoch-state.lock siblings from policy_file, holds a lifetime shared flock,
+    and continuously fences the startup epoch and policy lineage. No
+    workflow-owned threshold defaults, runtime-state paths, runtime epoch
+    advance, or direct manual example launch is permitted. The internal Process
+    definition is started only by the dedicated Core Session runner.
+ownership:
+  paths:
+  - /opt/ros/noetic/share/xgc_session_clock_guard
+  - /opt/ros/noetic/include/xgc_session_clock_guard
+  - /opt/ros/noetic/lib/libxgc_session_clock_guard_core.so
+  - /opt/ros/noetic/lib/xgc_session_clock_guard/session_clock_guard_node
+  - /opt/ros/noetic/lib/xgc_session_clock_guard/session_clock_guard_healthcheck
+  - /usr/share/xgc2/process-definitions/xgc2-session-clock-guard.json
+release:
+  workflow: ci.yml
+  apt_versions:
+    focal: 0.1.0-1

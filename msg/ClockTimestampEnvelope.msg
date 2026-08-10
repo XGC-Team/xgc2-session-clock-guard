@@ -1,0 +1,32 @@
+std_msgs/Header header
+
+uint8 STATE_INITIALIZING=0
+uint8 STATE_LOCKED=1
+uint8 STATE_DEGRADED=2
+uint8 STATE_LOST=3
+
+string session_id
+string session_contract_sha256
+string policy_sha256
+string run_mode
+string session_time_authority
+string clock_mapping
+string slot
+string source_body
+string canonical_body
+string source_domain
+string stream
+uint64 epoch
+time raw_source_stamp
+time mapped_session_stamp
+uint64 receive_monotonic_stamp_ns
+uint64 authority_age_ns
+int64 gazebo_clock_skew_ns
+int64 offset_ns
+float64 drift_ppm
+uint64 jitter_ns
+uint64 uncertainty_ns
+uint8 state
+bool accepted
+bool canonical_published
+string reason

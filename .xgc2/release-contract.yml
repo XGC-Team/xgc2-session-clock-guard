@@ -1,0 +1,57 @@
+schema: xgc2.release-contract.v1
+product: xgc2-session-clock-guard
+version: 0.1.0-1
+source:
+  ros_distro: noetic
+  ubuntu_distribution: focal
+  docker_image: ros:noetic-ros-base-focal
+matrix:
+  architectures:
+  - amd64
+  - arm64
+artifacts:
+  apt_packages:
+  - ros-noetic-xgc2-session-clock-guard
+  trusted_build_manifest: required
+gates:
+- core_cpp17_tests
+- frozen_config_sha256
+- catkin_build
+- catkin_tests
+- apt_install_check
+- installed_rospack_path
+- installed_node_executable
+- process_definition_static_discovery
+- epoch_state_canonical_and_secure_file_tests
+- epoch_state_shared_lease_and_inode_tests
+- live_readiness_sequence_and_publisher_tests
+- strong_locked_liveness_process_contract
+- no_motion_command_surface
+current_worktree_core_facts:
+- canonical_v2_policy_materializer_and_digest_validation
+- private_0700_session_artifact_directory
+- immutable_0600_policy_and_canonical_0600_epoch_state
+- retry_stable_and_distinct_job_monotonic_epoch_allocation
+- nonblocking_exclusive_epoch_allocation_lease
+- internal_process_definition_rejected_by_public_generic_creation
+- dedicated_session_runner_pins_definition_digest_and_opens_internal_gate
+- supervised_generic_runtime_and_resource_claim_resolution_are_reused
+integration_gates:
+- current_core_process_loader_discovery
+- current_core_parameter_normalization
+- current_core_resource_claim_resolution
+integration_gaps:
+- standalone_product_repository_not_initialized_or_published
+- parent_repository_gitlink_not_registered
+- apt_repository_publication_not_completed
+- arm64_matrix_configured_without_successful_run_evidence
+- apt_installed_product_and_current_core_not_live_integrated
+live_gates_not_satisfied_by_ci:
+- gazebo_vrpn_v24_world_sim_time_on_wire
+- measurement_delay_sample_time_packet_evidence
+- physical_vrpn_raw_source
+- dual_raw_root_ros_graph
+- canonical_pose_twist_and_sidecar_capture
+- unique_status_publisher_and_two_advancing_live_samples
+- mode_threshold_and_authority_fault_injection
+- live_guard_blocks_epoch_advance_then_stop_advance_and_relock

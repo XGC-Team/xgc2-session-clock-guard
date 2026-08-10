@@ -1,0 +1,247 @@
+{
+  "apiVersion": "xgc.execution.process/v1",
+  "definitions": [
+    {
+      "id": "xgc2-session-clock-guard",
+      "version": "0.1.0",
+      "label": "Session Clock Guard",
+      "description": "Core-local fail-closed mode-aware Session authority, mapper, and route guard from the two source-preserving VRPN roots to the uniquely owned canonical VRPN root. All authority, clock thresholds, and routes come only from policyFile after policySha256 verification; the Guard derives and continuously validates sibling Core-owned 0600 epoch-state.json and holds a shared flock on epoch-state.lock for its lifetime. This internal definition is available only to the dedicated Core Session runner, which pins its digest before using the supervised generic runtime; workflow parameters cannot open that gate or override frozen inputs.",
+      "drivers": [
+        "host"
+      ],
+      "parameters": {
+        "additionalProperties": false,
+        "required": [
+          "policyFile",
+          "policySha256",
+          "epochId"
+        ],
+        "properties": {
+          "epochId": {
+            "type": "string",
+            "description": "Required canonical nonzero uint64 Session epoch allocated by Core for this new process. It must match the sibling epoch-state.json and cannot change in a running Guard; lost recovery constructs a new process at Core's strictly newer epoch."
+          },
+          "policyFile": {
+            "type": "string",
+            "description": "Required absolute path to the immutable Session Clock Guard config containing every route, IO limit, and clock threshold. Its private parent directory must also contain Core's canonical regular 0600 epoch-state.json and regular 0600 epoch-state.lock; both paths are derived and are not parameters.",
+            "x-xgc-path-kind": "file",
+            "x-xgc-file-extensions": [
+              ".cfg"
+            ]
+          },
+          "policySha256": {
+            "type": "string",
+            "description": "Required lowercase SHA-256 of policyFile; the node verifies the exact bytes and continuously requires the same digest in Core's epoch fence."
+          },
+          "rosInstallPath": {
+            "type": "string",
+            "default": "/opt/ros/noetic",
+            "description": "Trusted ROS Noetic installation prefix.",
+            "fixedOnly": true,
+            "x-xgc-path-kind": "directory"
+          },
+          "rosIp": {
+            "type": "string",
+            "default": "127.0.0.1",
+            "description": "Core-local ROS_IP advertised by the centralized guard."
+          },
+          "rosLogDir": {
+            "type": "string",
+            "default": "/tmp/xgc2/ros/log",
+            "description": "Core-local ROS log directory.",
+            "x-xgc-path-kind": "directory"
+          },
+          "rosMasterUri": {
+            "type": "string",
+            "default": "http://127.0.0.1:11311",
+            "description": "Centralized ROS1 master used by both raw VRPN sources and the canonical output."
+          },
+          "rosNodeName": {
+            "type": "string",
+            "default": "xgc_session_clock_guard",
+            "description": "Fixed canonical private __name value; readiness and resource claims resolve it to /xgc_session_clock_guard.",
+            "fixedOnly": true
+          }
+        }
+      },
+      "parameterPolicyRevision": "core/session-clock-guard/v1",
+      "resourceClaims": [
+        {
+          "bindingKey": "canonical-vrpn-root",
+          "kind": "custom",
+          "mode": "exclusive",
+          "capacity": 1,
+          "namespace": "ros-topic-root",
+          "identityNormalization": "join-tail-as-absolute-path",
+          "identityParts": [
+            {
+              "parameter": "rosMasterUri"
+            },
+            {
+              "literal": "/vrpn_client_node"
+            }
+          ]
+        },
+        {
+          "bindingKey": "physical-raw-vrpn-root",
+          "kind": "custom",
+          "mode": "shared",
+          "capacity": 1000000,
+          "namespace": "ros-topic-root",
+          "identityNormalization": "join-tail-as-absolute-path",
+          "identityParts": [
+            {
+              "parameter": "rosMasterUri"
+            },
+            {
+              "literal": "/xgc/source/vrpn/physical"
+            }
+          ]
+        },
+        {
+          "bindingKey": "ros-node",
+          "kind": "custom",
+          "mode": "exclusive",
+          "capacity": 1,
+          "namespace": "ros-node",
+          "identityNormalization": "join-tail-as-absolute-path",
+          "identityParts": [
+            {
+              "parameter": "rosMasterUri"
+            },
+            {
+              "parameter": "rosNodeName"
+            }
+          ]
+        },
+        {
+          "bindingKey": "session-clock-sidecar-root",
+          "kind": "custom",
+          "mode": "exclusive",
+          "capacity": 1,
+          "namespace": "ros-topic-root",
+          "identityNormalization": "join-tail-as-absolute-path",
+          "identityParts": [
+            {
+              "parameter": "rosMasterUri"
+            },
+            {
+              "literal": "/xgc/session/clock"
+            }
+          ]
+        },
+        {
+          "bindingKey": "simulation-raw-vrpn-root",
+          "kind": "custom",
+          "mode": "shared",
+          "capacity": 1000000,
+          "namespace": "ros-topic-root",
+          "identityNormalization": "join-tail-as-absolute-path",
+          "identityParts": [
+            {
+              "parameter": "rosMasterUri"
+            },
+            {
+              "literal": "/xgc/source/vrpn/simulation"
+            }
+          ]
+        }
+      ],
+      "command": {
+        "executable": "${rosInstallPath}/lib/xgc_session_clock_guard/session_clock_guard_node",
+        "args": [
+          "__name:=${rosNodeName}",
+          "_policy_file:=${policyFile}",
+          "_policy_sha256:=${policySha256}",
+          "_epoch_id:=\"${epochId}\""
+        ],
+        "directExecutable": true,
+        "env": {
+          "CMAKE_PREFIX_PATH": "${rosInstallPath}",
+          "LD_LIBRARY_PATH": "${rosInstallPath}/lib:${rosInstallPath}/lib/x86_64-linux-gnu:${rosInstallPath}/lib/aarch64-linux-gnu",
+          "PATH": "${rosInstallPath}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+          "PYTHONPATH": "${rosInstallPath}/lib/python3/dist-packages",
+          "ROS_DISTRO": "noetic",
+          "ROS_ETC_DIR": "${rosInstallPath}/etc/ros",
+          "ROS_IP": "${rosIp}",
+          "ROS_LOG_DIR": "${rosLogDir}",
+          "ROS_MASTER_URI": "${rosMasterUri}",
+          "ROS_PACKAGE_PATH": "${rosInstallPath}/share",
+          "ROS_PYTHON_VERSION": "3",
+          "ROS_ROOT": "${rosInstallPath}/share/ros",
+          "ROS_VERSION": "1"
+        }
+      },
+      "readiness": {
+        "kind": "exec",
+        "command": {
+          "executable": "${rosInstallPath}/lib/xgc_session_clock_guard/session_clock_guard_healthcheck",
+          "args": [
+            "${policyFile}",
+            "${policySha256}",
+            "${epochId}"
+          ],
+          "env": {
+            "CMAKE_PREFIX_PATH": "${rosInstallPath}",
+            "LD_LIBRARY_PATH": "${rosInstallPath}/lib:${rosInstallPath}/lib/x86_64-linux-gnu:${rosInstallPath}/lib/aarch64-linux-gnu",
+            "PATH": "${rosInstallPath}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+            "PYTHONPATH": "${rosInstallPath}/lib/python3/dist-packages",
+            "ROS_DISTRO": "noetic",
+            "ROS_ETC_DIR": "${rosInstallPath}/etc/ros",
+            "ROS_IP": "${rosIp}",
+            "ROS_LOG_DIR": "${rosLogDir}",
+            "ROS_MASTER_URI": "${rosMasterUri}",
+            "ROS_PACKAGE_PATH": "${rosInstallPath}/share",
+            "ROS_PYTHON_VERSION": "3",
+            "ROS_ROOT": "${rosInstallPath}/share/ros",
+            "ROS_VERSION": "1"
+          }
+        },
+        "interval": 1000000000,
+        "timeout": 5000000000,
+        "successThreshold": 1,
+        "failureThreshold": 10
+      },
+      "liveness": {
+        "kind": "exec",
+        "command": {
+          "executable": "${rosInstallPath}/lib/xgc_session_clock_guard/session_clock_guard_healthcheck",
+          "args": [
+            "${policyFile}",
+            "${policySha256}",
+            "${epochId}"
+          ],
+          "env": {
+            "CMAKE_PREFIX_PATH": "${rosInstallPath}",
+            "LD_LIBRARY_PATH": "${rosInstallPath}/lib:${rosInstallPath}/lib/x86_64-linux-gnu:${rosInstallPath}/lib/aarch64-linux-gnu",
+            "PATH": "${rosInstallPath}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+            "PYTHONPATH": "${rosInstallPath}/lib/python3/dist-packages",
+            "ROS_DISTRO": "noetic",
+            "ROS_ETC_DIR": "${rosInstallPath}/etc/ros",
+            "ROS_IP": "${rosIp}",
+            "ROS_LOG_DIR": "${rosLogDir}",
+            "ROS_MASTER_URI": "${rosMasterUri}",
+            "ROS_PACKAGE_PATH": "${rosInstallPath}/share",
+            "ROS_PYTHON_VERSION": "3",
+            "ROS_ROOT": "${rosInstallPath}/share/ros",
+            "ROS_VERSION": "1"
+          }
+        },
+        "interval": 1000000000,
+        "timeout": 5000000000,
+        "successThreshold": 1,
+        "failureThreshold": 1
+      },
+      "stop": {
+        "gracePeriod": 5000000000
+      },
+      "restart": {
+        "mode": "never",
+        "maxRestarts": 0,
+        "backoff": 0
+      },
+      "digest": "",
+      "internal": true
+    }
+  ]
+}

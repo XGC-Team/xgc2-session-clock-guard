@@ -1,0 +1,15 @@
+<launch>
+  <arg name="policy_file" />
+  <arg name="policy_sha256" />
+  <arg name="epoch_id" />
+
+  <node pkg="xgc_session_clock_guard"
+        type="session_clock_guard_node"
+        name="xgc_session_clock_guard"
+        output="screen"
+        required="true">
+    <param name="policy_file" value="$(arg policy_file)" type="str" />
+    <param name="policy_sha256" value="$(arg policy_sha256)" type="str" />
+    <param name="epoch_id" value="$(arg epoch_id)" type="str" />
+  </node>
+</launch>
