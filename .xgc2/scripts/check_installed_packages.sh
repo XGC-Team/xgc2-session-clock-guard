@@ -13,7 +13,9 @@ SYSTEM_PROCESS_DEFINITION="/usr/share/xgc2/process-definitions/xgc2-session-cloc
 dpkg -s "${APT_PACKAGE}" >/dev/null
 
 set +u
-# shellcheck disable=SC1090
+# The installed ROS setup is created by the package under test and cannot be
+# resolved statically from this source checkout.
+# shellcheck disable=SC1090,SC1091
 source "${PREFIX}/setup.bash"
 set -u
 
