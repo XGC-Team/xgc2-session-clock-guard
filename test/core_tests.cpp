@@ -1,6 +1,6 @@
+#include "xgc_session_clock_guard/epoch_fence.hpp"
 #include "xgc_session_clock_guard/frozen_config.hpp"
 #include "xgc_session_clock_guard/healthcheck.hpp"
-#include "xgc_session_clock_guard/epoch_fence.hpp"
 #include "xgc_session_clock_guard/session_clock_guard.hpp"
 
 #include <fcntl.h>
@@ -26,7 +26,7 @@ namespace {
 
 int failures = 0;
 
-void check(bool condition, const std::string& message) {
+void check(bool condition, const std::string &message) {
   if (!condition) {
     ++failures;
     std::cerr << "FAIL: " << message << '\n';
@@ -34,17 +34,16 @@ void check(bool condition, const std::string& message) {
 }
 
 template <typename Callable>
-void expectConfigError(Callable callable, const std::string& message) {
+void expectConfigError(Callable callable, const std::string &message) {
   try {
     callable();
     check(false, message + " (did not throw)");
-  } catch (const guard::ConfigError&) {
+  } catch (const guard::ConfigError &) {
   }
 }
 
-void replaceOnce(std::string* value,
-                 const std::string& from,
-                 const std::string& to) {
+void replaceOnce(std::string *value, const std::string &from,
+                 const std::string &to) {
   const auto position = value->find(from);
   if (position == std::string::npos) {
     throw std::runtime_error("test fixture replacement did not find: " + from);
@@ -52,9 +51,8 @@ void replaceOnce(std::string* value,
   value->replace(position, from.size(), to);
 }
 
-void replaceAll(std::string* value,
-                const std::string& from,
-                const std::string& to) {
+void replaceAll(std::string *value, const std::string &from,
+                const std::string &to) {
   std::size_t position = 0U;
   std::size_t replacements = 0U;
   while ((position = value->find(from, position)) != std::string::npos) {
@@ -68,108 +66,108 @@ void replaceAll(std::string* value,
 }
 
 std::string simulationConfig() {
-  return
-      "schema=xgc.session-clock-guard.config.v2\n"
-      "policy_revision=xgc.session-clock-guard.builtin-policy.v1\n"
-      "session_id=session-simulation-001\n"
-      "session_contract_sha256=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n"
-      "run_mode=simulation\n"
-      "session_clock.authority=gazebo-simulation\n"
-      "session_clock.mapping=identity\n"
-      "vrpn.wire_time_resolution_ns=1000\n"
-      "delay.measurement_enabled=true\n"
-      "delay.timestamp_policy=sample_time\n"
-      "threshold.min_lock_samples=2\n"
-      "threshold.recover_lock_samples=2\n"
-      "threshold.lost_after_failures=2\n"
-      "threshold.startup_lock_timeout_ns=500000000\n"
-      "threshold.max_uncertainty_ns=10000000\n"
-      "threshold.max_sample_age_ns=50000000\n"
-      "threshold.max_authority_age_ns=50000000\n"
-      "threshold.max_gazebo_clock_skew_ns=20000000\n"
-      "threshold.guard_poll_period_ns=25000000\n"
-      "io.queue_depth=16\n"
-      "route.px4-01.source_domain=simulation\n"
-      "route.px4-01.source_body=uav1\n"
-      "route.px4-01.canonical_body=uav1\n"
-      "route.px4-01.sample_period_ns=10000000\n"
-      "route.px4-01.source_uncertainty_ns=6000000\n";
+  return "schema=xgc.session-clock-guard.config.v2\n"
+         "policy_revision=xgc.session-clock-guard.builtin-policy.v1\n"
+         "session_id=session-simulation-001\n"
+         "session_contract_sha256="
+         "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n"
+         "run_mode=simulation\n"
+         "session_clock.authority=gazebo-simulation\n"
+         "session_clock.mapping=identity\n"
+         "vrpn.wire_time_resolution_ns=1000\n"
+         "delay.measurement_enabled=true\n"
+         "delay.timestamp_policy=sample_time\n"
+         "threshold.min_lock_samples=2\n"
+         "threshold.recover_lock_samples=2\n"
+         "threshold.lost_after_failures=2\n"
+         "threshold.startup_lock_timeout_ns=500000000\n"
+         "threshold.max_uncertainty_ns=10000000\n"
+         "threshold.max_sample_age_ns=50000000\n"
+         "threshold.max_authority_age_ns=50000000\n"
+         "threshold.max_gazebo_clock_skew_ns=20000000\n"
+         "threshold.guard_poll_period_ns=25000000\n"
+         "io.queue_depth=16\n"
+         "route.px4-01.source_domain=simulation\n"
+         "route.px4-01.source_body=uav1\n"
+         "route.px4-01.canonical_body=uav1\n"
+         "route.px4-01.sample_period_ns=10000000\n"
+         "route.px4-01.source_uncertainty_ns=6000000\n";
 }
 
 std::string physicalConfig() {
-  return
-      "schema=xgc.session-clock-guard.config.v2\n"
-      "policy_revision=xgc.session-clock-guard.builtin-policy.v1\n"
-      "session_id=session-physical-001\n"
-      "session_contract_sha256=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n"
-      "run_mode=physical\n"
-      "session_clock.authority=station-wall-monotonic\n"
-      "session_clock.mapping=affine-to-session\n"
-      "vrpn.wire_time_resolution_ns=1000\n"
-      "delay.measurement_enabled=true\n"
-      "delay.timestamp_policy=sample_time\n"
-      "threshold.estimator_window=8\n"
-      "threshold.min_lock_samples=2\n"
-      "threshold.recover_lock_samples=2\n"
-      "threshold.lost_after_failures=2\n"
-      "threshold.startup_lock_timeout_ns=500000000\n"
-      "threshold.max_offset_step_ns=5000000\n"
-      "threshold.max_drift_ppm=5000\n"
-      "threshold.max_jitter_ns=2000000\n"
-      "threshold.max_uncertainty_ns=10000000\n"
-      "threshold.max_sample_age_ns=50000000\n"
-      "threshold.max_authority_age_ns=50000000\n"
-      "threshold.max_station_wall_error_ns=20000000\n"
-      "threshold.max_station_wall_step_ns=5000000\n"
-      "threshold.guard_poll_period_ns=25000000\n"
-      "io.queue_depth=16\n"
-      "route.scout-01.source_domain=physical\n"
-      "route.scout-01.source_body=ugv1\n"
-      "route.scout-01.canonical_body=ugv1\n"
-      "route.scout-01.sample_period_ns=10000000\n"
-      "route.scout-01.source_uncertainty_ns=6000000\n";
+  return "schema=xgc.session-clock-guard.config.v2\n"
+         "policy_revision=xgc.session-clock-guard.builtin-policy.v1\n"
+         "session_id=session-physical-001\n"
+         "session_contract_sha256="
+         "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n"
+         "run_mode=physical\n"
+         "session_clock.authority=station-wall-monotonic\n"
+         "session_clock.mapping=affine-to-session\n"
+         "vrpn.wire_time_resolution_ns=1000\n"
+         "delay.measurement_enabled=true\n"
+         "delay.timestamp_policy=sample_time\n"
+         "threshold.estimator_window=8\n"
+         "threshold.min_lock_samples=2\n"
+         "threshold.recover_lock_samples=2\n"
+         "threshold.lost_after_failures=2\n"
+         "threshold.startup_lock_timeout_ns=500000000\n"
+         "threshold.max_offset_step_ns=5000000\n"
+         "threshold.max_drift_ppm=5000\n"
+         "threshold.max_jitter_ns=2000000\n"
+         "threshold.max_uncertainty_ns=10000000\n"
+         "threshold.max_sample_age_ns=50000000\n"
+         "threshold.max_authority_age_ns=50000000\n"
+         "threshold.max_station_wall_error_ns=20000000\n"
+         "threshold.max_station_wall_step_ns=5000000\n"
+         "threshold.guard_poll_period_ns=25000000\n"
+         "io.queue_depth=16\n"
+         "route.scout-01.source_domain=physical\n"
+         "route.scout-01.source_body=ugv1\n"
+         "route.scout-01.canonical_body=ugv1\n"
+         "route.scout-01.sample_period_ns=10000000\n"
+         "route.scout-01.source_uncertainty_ns=6000000\n";
 }
 
 std::string hybridConfig() {
-  return
-      "schema=xgc.session-clock-guard.config.v2\n"
-      "policy_revision=xgc.session-clock-guard.builtin-policy.v1\n"
-      "session_id=session-hybrid-001\n"
-      "session_contract_sha256=cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\n"
-      "run_mode=hybrid\n"
-      "session_clock.authority=station-wall-monotonic\n"
-      "session_clock.mapping=affine-to-session\n"
-      "vrpn.wire_time_resolution_ns=1000\n"
-      "delay.measurement_enabled=true\n"
-      "delay.timestamp_policy=sample_time\n"
-      "threshold.estimator_window=8\n"
-      "threshold.min_lock_samples=2\n"
-      "threshold.recover_lock_samples=2\n"
-      "threshold.lost_after_failures=2\n"
-      "threshold.startup_lock_timeout_ns=500000000\n"
-      "threshold.max_offset_step_ns=5000000\n"
-      "threshold.max_drift_ppm=5000\n"
-      "threshold.max_jitter_ns=2000000\n"
-      "threshold.max_uncertainty_ns=10000000\n"
-      "threshold.max_sample_age_ns=50000000\n"
-      "threshold.max_authority_age_ns=50000000\n"
-      "threshold.max_gazebo_clock_skew_ns=20000000\n"
-      "threshold.max_station_wall_error_ns=20000000\n"
-      "threshold.max_station_wall_step_ns=5000000\n"
-      "threshold.min_gazebo_real_time_factor=0.8\n"
-      "threshold.max_gazebo_real_time_factor=1.2\n"
-      "threshold.guard_poll_period_ns=25000000\n"
-      "io.queue_depth=16\n"
-      "route.px4-01.source_domain=simulation\n"
-      "route.px4-01.source_body=uav1\n"
-      "route.px4-01.canonical_body=uav1\n"
-      "route.px4-01.sample_period_ns=10000000\n"
-      "route.px4-01.source_uncertainty_ns=6000000\n"
-      "route.scout-01.source_domain=physical\n"
-      "route.scout-01.source_body=ugv1\n"
-      "route.scout-01.canonical_body=uav7\n"
-      "route.scout-01.sample_period_ns=10000000\n"
-      "route.scout-01.source_uncertainty_ns=6000000\n";
+  return "schema=xgc.session-clock-guard.config.v2\n"
+         "policy_revision=xgc.session-clock-guard.builtin-policy.v1\n"
+         "session_id=session-hybrid-001\n"
+         "session_contract_sha256="
+         "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\n"
+         "run_mode=hybrid\n"
+         "session_clock.authority=station-wall-monotonic\n"
+         "session_clock.mapping=affine-to-session\n"
+         "vrpn.wire_time_resolution_ns=1000\n"
+         "delay.measurement_enabled=true\n"
+         "delay.timestamp_policy=sample_time\n"
+         "threshold.estimator_window=8\n"
+         "threshold.min_lock_samples=2\n"
+         "threshold.recover_lock_samples=2\n"
+         "threshold.lost_after_failures=2\n"
+         "threshold.startup_lock_timeout_ns=500000000\n"
+         "threshold.max_offset_step_ns=5000000\n"
+         "threshold.max_drift_ppm=5000\n"
+         "threshold.max_jitter_ns=2000000\n"
+         "threshold.max_uncertainty_ns=10000000\n"
+         "threshold.max_sample_age_ns=50000000\n"
+         "threshold.max_authority_age_ns=50000000\n"
+         "threshold.max_gazebo_clock_skew_ns=20000000\n"
+         "threshold.max_station_wall_error_ns=20000000\n"
+         "threshold.max_station_wall_step_ns=5000000\n"
+         "threshold.min_gazebo_real_time_factor=0.8\n"
+         "threshold.max_gazebo_real_time_factor=1.2\n"
+         "threshold.guard_poll_period_ns=25000000\n"
+         "io.queue_depth=16\n"
+         "route.px4-01.source_domain=simulation\n"
+         "route.px4-01.source_body=uav1\n"
+         "route.px4-01.canonical_body=uav1\n"
+         "route.px4-01.sample_period_ns=10000000\n"
+         "route.px4-01.source_uncertainty_ns=6000000\n"
+         "route.scout-01.source_domain=physical\n"
+         "route.scout-01.source_body=ugv1\n"
+         "route.scout-01.canonical_body=uav7\n"
+         "route.scout-01.sample_period_ns=10000000\n"
+         "route.scout-01.source_uncertainty_ns=6000000\n";
 }
 
 std::string withoutRoutes(std::string config) {
@@ -181,28 +179,25 @@ std::string withoutRoutes(std::string config) {
   return config;
 }
 
-guard::FrozenConfig parse(const std::string& text) {
+guard::FrozenConfig parse(const std::string &text) {
   return guard::FrozenConfigLoader::parse(text, std::string(64U, 'd'));
 }
 
-std::string epochState(const guard::FrozenConfig& config,
-                       const std::string& epoch) {
+std::string epochState(const guard::FrozenConfig &config,
+                       const std::string &epoch) {
   return "{\"epochId\":\"" + epoch +
-         "\",\"jobId\":\"job-1\",\"policySha256\":\"" +
-         config.policy_sha256 +
+         "\",\"jobId\":\"job-1\",\"policySha256\":\"" + config.policy_sha256 +
          "\",\"schema\":\"xgc.session-clock-policy.epoch-state.v1\","
          "\"sessionContractSha256\":\"" +
          config.session_contract_sha256 + "\",\"sessionId\":\"" +
          config.session_id + "\",\"targetId\":\"local\"}\n";
 }
 
-guard::Observation observation(const std::string& slot,
-                               const std::string& source_body,
-                               guard::SourceDomain domain,
-                               std::uint64_t raw_ns,
-                               std::uint64_t monotonic_ns,
-                               std::uint64_t wall_ns,
-                               guard::StreamKind stream = guard::StreamKind::Pose) {
+guard::Observation
+observation(const std::string &slot, const std::string &source_body,
+            guard::SourceDomain domain, std::uint64_t raw_ns,
+            std::uint64_t monotonic_ns, std::uint64_t wall_ns,
+            guard::StreamKind stream = guard::StreamKind::Pose) {
   guard::Observation value;
   value.slot = slot;
   value.source_body = source_body;
@@ -224,9 +219,8 @@ guard::GazeboClockObservation gazeboClock(std::uint64_t gazebo_ns,
   return value;
 }
 
-guard::AggregateAdmissionEvidence lockedEvidence(
-    const guard::FrozenConfig& config,
-    std::uint64_t epoch) {
+guard::AggregateAdmissionEvidence
+lockedEvidence(const guard::FrozenConfig &config, std::uint64_t epoch) {
   guard::AggregateAdmissionEvidence evidence;
   evidence.session_id = config.session_id;
   evidence.session_contract_sha256 = config.session_contract_sha256;
@@ -250,8 +244,7 @@ guard::AggregateAdmissionEvidence lockedEvidence(
   if (config.run_mode == "hybrid") {
     evidence.gazebo_real_time_factor = 1.0;
   }
-  evidence.required_routes =
-      static_cast<std::uint32_t>(config.routes.size());
+  evidence.required_routes = static_cast<std::uint32_t>(config.routes.size());
   evidence.locked_routes = static_cast<std::uint32_t>(config.routes.size());
   evidence.vrpn_wire_resolution_ns = config.vrpn_wire_resolution_ns;
   evidence.measurement_delay_enabled = config.measurement_delay_enabled;
@@ -273,11 +266,11 @@ void testFrozenModesRoutesAndTopics() {
   const auto physical = parse(physicalConfig());
   const auto hybrid = parse(hybridConfig());
   check(simulation.session_time_authority ==
-            guard::SessionTimeAuthority::GazeboSimulation &&
+                guard::SessionTimeAuthority::GazeboSimulation &&
             simulation.clock_mapping == guard::ClockMapping::Identity,
         "Simulation authority/mapping pair was not preserved");
   check(physical.session_time_authority ==
-            guard::SessionTimeAuthority::StationWallMonotonic &&
+                guard::SessionTimeAuthority::StationWallMonotonic &&
             physical.clock_mapping == guard::ClockMapping::AffineToSession,
         "Physical authority/mapping pair was not preserved");
   check(hybrid.routes.size() == 2U, "Hybrid route set was not preserved");
@@ -312,20 +305,22 @@ void testFrozenModesRoutesAndTopics() {
               "threshold.guard_poll_period_ns=25000000",
               "threshold.max_station_wall_error_ns=20000000\n"
               "threshold.guard_poll_period_ns=25000000");
-  expectConfigError([&]() { parse(simulation_with_wall_field); },
-                    "mode-mismatched Simulation wall threshold must be rejected");
+  expectConfigError(
+      [&]() { parse(simulation_with_wall_field); },
+      "mode-mismatched Simulation wall threshold must be rejected");
 
   auto physical_with_gazebo_field = physicalConfig();
   replaceOnce(&physical_with_gazebo_field,
               "threshold.max_station_wall_error_ns=20000000",
               "threshold.max_gazebo_clock_skew_ns=20000000\n"
               "threshold.max_station_wall_error_ns=20000000");
-  expectConfigError([&]() { parse(physical_with_gazebo_field); },
-                    "mode-mismatched Physical Gazebo threshold must be rejected");
+  expectConfigError(
+      [&]() { parse(physical_with_gazebo_field); },
+      "mode-mismatched Physical Gazebo threshold must be rejected");
 
   auto incomplete_hybrid = hybridConfig();
-  replaceOnce(&incomplete_hybrid,
-              "threshold.max_gazebo_real_time_factor=1.2\n", "");
+  replaceOnce(&incomplete_hybrid, "threshold.max_gazebo_real_time_factor=1.2\n",
+              "");
   expectConfigError([&]() { parse(incomplete_hybrid); },
                     "Hybrid with one RTF bound missing must fail closed");
 
@@ -336,8 +331,7 @@ void testFrozenModesRoutesAndTopics() {
                     "duplicate canonical bodies must fail closed");
 
   auto duplicate_raw = hybridConfig();
-  replaceOnce(&duplicate_raw,
-              "route.scout-01.source_uncertainty_ns=6000000",
+  replaceOnce(&duplicate_raw, "route.scout-01.source_uncertainty_ns=6000000",
               "route.scout-01.source_uncertainty_ns=6000000\n"
               "route.scout-02.source_domain=physical\n"
               "route.scout-02.source_body=ugv1\n"
@@ -360,23 +354,25 @@ void testFrozenModesRoutesAndTopics() {
                     "v24 send_time policy must fail closed");
 
   auto low_uncertainty = hybridConfig();
-  replaceOnce(&low_uncertainty,
-              "route.px4-01.source_uncertainty_ns=6000000",
+  replaceOnce(&low_uncertainty, "route.px4-01.source_uncertainty_ns=6000000",
               "route.px4-01.source_uncertainty_ns=1000");
-  expectConfigError([&]() { parse(low_uncertainty); },
-                    "uncertainty below quantization plus half-sample must fail closed");
+  expectConfigError(
+      [&]() { parse(low_uncertainty); },
+      "uncertainty below quantization plus half-sample must fail closed");
 
   auto embedded_epoch = simulationConfig();
   replaceOnce(&embedded_epoch, "io.queue_depth=16",
               "epoch_id=41\nio.queue_depth=16");
-  expectConfigError([&]() { parse(embedded_epoch); },
-                    "epoch must remain a Session lifecycle input, not frozen config data");
+  expectConfigError(
+      [&]() { parse(embedded_epoch); },
+      "epoch must remain a Session lifecycle input, not frozen config data");
 
   auto author_identity_override = simulationConfig();
   replaceOnce(&author_identity_override, "io.queue_depth=16",
               "author.session_id=forged\nio.queue_depth=16");
-  expectConfigError([&]() { parse(author_identity_override); },
-                    "author identity override keys must be unknown and rejected");
+  expectConfigError(
+      [&]() { parse(author_identity_override); },
+      "author identity override keys must be unknown and rejected");
 
   auto wrong_policy_revision = simulationConfig();
   replaceOnce(&wrong_policy_revision,
@@ -389,13 +385,14 @@ void testFrozenModesRoutesAndTopics() {
   replaceOnce(&mode_scoped_startup,
               "threshold.startup_lock_timeout_ns=500000000",
               "simulation.threshold.startup_lock_timeout_ns=500000000");
-  expectConfigError([&]() { parse(mode_scoped_startup); },
-                    "startup timeout must be one common field, not a mode-scoped override");
+  expectConfigError(
+      [&]() { parse(mode_scoped_startup); },
+      "startup timeout must be one common field, not a mode-scoped override");
 }
 
 void testCanonicalParserAndEpochText() {
   const std::string canonical = simulationConfig();
-  for (const auto& malformed : {
+  for (const auto &malformed : {
            std::string("# comment\n") + canonical,
            std::string("\n") + canonical,
            std::string("schema =xgc.session-clock-guard.config.v2\n") +
@@ -403,8 +400,9 @@ void testCanonicalParserAndEpochText() {
            canonical.substr(canonical.find('\n') + 1U) +
                canonical.substr(0U, canonical.find('\n') + 1U),
        }) {
-    expectConfigError([&]() { parse(malformed); },
-                      "noncanonical comments, blanks, padding, or order must fail");
+    expectConfigError(
+        [&]() { parse(malformed); },
+        "noncanonical comments, blanks, padding, or order must fail");
   }
 
   auto leading_zero = canonical;
@@ -413,8 +411,8 @@ void testCanonicalParserAndEpochText() {
                     "noncanonical unsigned spelling must fail");
 
   auto missing_startup = canonical;
-  replaceOnce(&missing_startup,
-              "threshold.startup_lock_timeout_ns=500000000\n", "");
+  replaceOnce(&missing_startup, "threshold.startup_lock_timeout_ns=500000000\n",
+              "");
   expectConfigError([&]() { parse(missing_startup); },
                     "missing common startup lock timeout must fail");
 
@@ -436,21 +434,21 @@ void testCanonicalParserAndEpochText() {
   replaceOnce(&startup_below_freshness,
               "threshold.startup_lock_timeout_ns=500000000",
               "threshold.startup_lock_timeout_ns=250000000");
-  replaceOnce(&startup_below_freshness,
-              "threshold.max_sample_age_ns=50000000",
+  replaceOnce(&startup_below_freshness, "threshold.max_sample_age_ns=50000000",
               "threshold.max_sample_age_ns=300000000");
-  expectConfigError([&]() { parse(startup_below_freshness); },
-                    "startup timeout below a runtime freshness bound must fail");
+  expectConfigError(
+      [&]() { parse(startup_below_freshness); },
+      "startup timeout below a runtime freshness bound must fail");
 
   auto reordered_startup = canonical;
   replaceOnce(&reordered_startup,
               "threshold.startup_lock_timeout_ns=500000000\n", "");
-  replaceOnce(&reordered_startup,
-              "threshold.max_authority_age_ns=50000000\n",
+  replaceOnce(&reordered_startup, "threshold.max_authority_age_ns=50000000\n",
               "threshold.max_authority_age_ns=50000000\n"
               "threshold.startup_lock_timeout_ns=500000000\n");
-  expectConfigError([&]() { parse(reordered_startup); },
-                    "startup timeout outside canonical Core field order must fail");
+  expectConfigError(
+      [&]() { parse(reordered_startup); },
+      "startup timeout outside canonical Core field order must fail");
 
   auto slow_poll = canonical;
   replaceOnce(&slow_poll, "threshold.guard_poll_period_ns=25000000",
@@ -459,8 +457,9 @@ void testCanonicalParserAndEpochText() {
               "threshold.max_sample_age_ns=300000000");
   replaceOnce(&slow_poll, "threshold.max_authority_age_ns=50000000",
               "threshold.max_authority_age_ns=300000000");
-  expectConfigError([&]() { parse(slow_poll); },
-                    "guard poll periods over the 250 ms readiness bound must fail");
+  expectConfigError(
+      [&]() { parse(slow_poll); },
+      "guard poll periods over the 250 ms readiness bound must fail");
 
   auto padded_float = physicalConfig();
   replaceOnce(&padded_float, "threshold.max_drift_ppm=5000",
@@ -501,26 +500,27 @@ void testCanonicalParserAndEpochText() {
             guard::parseEpochId("18446744073709551615") ==
                 std::numeric_limits<std::uint64_t>::max(),
         "canonical epoch parser must accept the uint64 domain");
-  for (const auto& invalid : {"", "0", "01", "+1", "-1", "1 "}) {
+  for (const auto &invalid : {"", "0", "01", "+1", "-1", "1 "}) {
     try {
       (void)guard::parseEpochId(invalid);
       check(false, std::string("noncanonical epoch was accepted: ") + invalid);
-    } catch (const std::invalid_argument&) {
+    } catch (const std::invalid_argument &) {
     }
   }
 
   check(guard::parseRosPrivateEpochId("1") == 1U &&
             guard::parseRosPrivateEpochId("\"18446744073709551615\"") ==
                 std::numeric_limits<std::uint64_t>::max(),
-        "ROS private epoch parser must accept raw launch strings and exactly one formal double-quote wrapper");
-  for (const auto& invalid : {"\"\"", "\"0\"", "\"01\"", "\"1", "1\"",
+        "ROS private epoch parser must accept raw launch strings and exactly "
+        "one formal double-quote wrapper");
+  for (const auto &invalid : {"\"\"", "\"0\"", "\"01\"", "\"1", "1\"",
                               "\"\"1\"\"", "'1'", "!!str 1", "\"1 \""}) {
     try {
       (void)guard::parseRosPrivateEpochId(invalid);
       check(false,
             std::string("noncanonical ROS private epoch was accepted: ") +
                 invalid);
-    } catch (const std::invalid_argument&) {
+    } catch (const std::invalid_argument &) {
     }
   }
 }
@@ -535,7 +535,7 @@ void testEpochFenceCanonicalFileAndLoss() {
   try {
     guard::validateEpochFenceState(parsed, config, 8U);
     check(false, "a newer persisted epoch did not invalidate the old process");
-  } catch (const guard::EpochFenceError&) {
+  } catch (const guard::EpochFenceError &) {
   }
 
   auto unicode_trim_space = state_bytes;
@@ -544,7 +544,7 @@ void testEpochFenceCanonicalFileAndLoss() {
   try {
     (void)guard::parseCanonicalEpochState(unicode_trim_space);
     check(false, "Core-invalid trailing Unicode whitespace was accepted");
-  } catch (const guard::EpochFenceError&) {
+  } catch (const guard::EpochFenceError &) {
   }
   auto vertical_tab = state_bytes;
   replaceOnce(&vertical_tab, "\"targetId\":\"local\"",
@@ -552,10 +552,10 @@ void testEpochFenceCanonicalFileAndLoss() {
   try {
     (void)guard::parseCanonicalEpochState(vertical_tab);
     check(false, "Core-invalid leading vertical tab was accepted");
-  } catch (const guard::EpochFenceError&) {
+  } catch (const guard::EpochFenceError &) {
   }
 
-  for (const auto& malformed : {
+  for (const auto &malformed : {
            state_bytes.substr(0U, state_bytes.size() - 2U) +
                ",\"unknown\":\"x\"}\n",
            state_bytes.substr(0U, state_bytes.size() - 2U) +
@@ -566,14 +566,14 @@ void testEpochFenceCanonicalFileAndLoss() {
     try {
       (void)guard::parseCanonicalEpochState(malformed);
       check(false, "noncanonical epoch-state.json was accepted");
-    } catch (const guard::EpochFenceError&) {
+    } catch (const guard::EpochFenceError &) {
     }
   }
 
   std::array<char, 64U> directory_template{};
   const std::string prefix = "/tmp/xgc-clock-fence-test.XXXXXX";
   std::copy(prefix.begin(), prefix.end(), directory_template.begin());
-  char* directory = ::mkdtemp(directory_template.data());
+  char *directory = ::mkdtemp(directory_template.data());
   check(directory != nullptr, "could not create epoch fence test directory");
   if (directory == nullptr) {
     return;
@@ -584,7 +584,7 @@ void testEpochFenceCanonicalFileAndLoss() {
   const std::string target_file = root + "/target.json";
   const std::string lock_file = root + "/epoch-state.lock";
   const std::string lock_target_file = root + "/lock-target";
-  auto writeState = [&](const std::string& path, mode_t mode) {
+  auto writeState = [&](const std::string &path, mode_t mode) {
     const int descriptor =
         ::open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, mode);
     check(descriptor >= 0, "could not create epoch fence test file");
@@ -599,8 +599,7 @@ void testEpochFenceCanonicalFileAndLoss() {
   };
   writeState(state_file, 0600);
   const int initial_lock =
-      ::open(lock_file.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC,
-             0600);
+      ::open(lock_file.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0600);
   check(initial_lock >= 0, "could not create epoch fence lock fixture");
   if (initial_lock >= 0) {
     ::close(initial_lock);
@@ -617,7 +616,7 @@ void testEpochFenceCanonicalFileAndLoss() {
     try {
       guard::EpochFenceLease blocked_guard(policy_file);
       check(false, "Guard acquired a shared lease during Core allocation");
-    } catch (const guard::EpochFenceError&) {
+    } catch (const guard::EpochFenceError &) {
     }
     (void)::flock(core_allocator, LOCK_UN);
     ::close(core_allocator);
@@ -631,7 +630,8 @@ void testEpochFenceCanonicalFileAndLoss() {
     if (contender >= 0) {
       check(::flock(contender, LOCK_EX | LOCK_NB) != 0 &&
                 (errno == EWOULDBLOCK || errno == EAGAIN),
-            "running Guard shared lease did not reject Core-style exclusive allocation");
+            "running Guard shared lease did not reject Core-style exclusive "
+            "allocation");
       ::close(contender);
     }
   }
@@ -651,7 +651,7 @@ void testEpochFenceCanonicalFileAndLoss() {
   try {
     guard::EpochFenceLease bad_mode(policy_file);
     check(false, "non-0600 epoch fence lock was accepted");
-  } catch (const guard::EpochFenceError&) {
+  } catch (const guard::EpochFenceError &) {
   }
   ::chmod(lock_file.c_str(), 0600);
 
@@ -667,7 +667,7 @@ void testEpochFenceCanonicalFileAndLoss() {
   try {
     guard::EpochFenceLease nonempty(policy_file);
     check(false, "nonempty epoch fence lock was accepted");
-  } catch (const guard::EpochFenceError&) {
+  } catch (const guard::EpochFenceError &) {
   }
   const int truncate_lock =
       ::open(lock_file.c_str(), O_WRONLY | O_TRUNC | O_CLOEXEC | O_NOFOLLOW);
@@ -679,9 +679,8 @@ void testEpochFenceCanonicalFileAndLoss() {
   {
     guard::EpochFenceLease held_inode(policy_file);
     ::unlink(lock_file.c_str());
-    const int replacement =
-        ::open(lock_file.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC,
-               0600);
+    const int replacement = ::open(
+        lock_file.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0600);
     check(replacement >= 0, "could not replace epoch lock inode fixture");
     if (replacement >= 0) {
       ::close(replacement);
@@ -689,15 +688,15 @@ void testEpochFenceCanonicalFileAndLoss() {
     }
     try {
       held_inode.validateCurrent();
-      check(false, "replaced epoch lock inode still validated as the held lease");
-    } catch (const guard::EpochFenceError&) {
+      check(false,
+            "replaced epoch lock inode still validated as the held lease");
+    } catch (const guard::EpochFenceError &) {
     }
   }
 
   ::unlink(lock_file.c_str());
-  const int lock_target =
-      ::open(lock_target_file.c_str(),
-             O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0600);
+  const int lock_target = ::open(lock_target_file.c_str(),
+                                 O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0600);
   check(lock_target >= 0, "could not create epoch lock symlink target");
   if (lock_target >= 0) {
     ::close(lock_target);
@@ -708,7 +707,7 @@ void testEpochFenceCanonicalFileAndLoss() {
   try {
     guard::EpochFenceLease symlink_lock(policy_file);
     check(false, "symlink epoch fence lock was accepted");
-  } catch (const guard::EpochFenceError&) {
+  } catch (const guard::EpochFenceError &) {
   }
   ::unlink(lock_file.c_str());
   ::unlink(lock_target_file.c_str());
@@ -717,7 +716,7 @@ void testEpochFenceCanonicalFileAndLoss() {
   try {
     guard::EpochFenceLease directory_lock(policy_file);
     check(false, "directory epoch fence lock was accepted");
-  } catch (const guard::EpochFenceError&) {
+  } catch (const guard::EpochFenceError &) {
   }
   ::rmdir(lock_file.c_str());
 
@@ -725,7 +724,7 @@ void testEpochFenceCanonicalFileAndLoss() {
   try {
     (void)guard::loadAndValidateEpochFence(policy_file, config, 7U);
     check(false, "non-0600 epoch fence was accepted");
-  } catch (const guard::EpochFenceError&) {
+  } catch (const guard::EpochFenceError &) {
   }
   ::unlink(state_file.c_str());
   writeState(target_file, 0600);
@@ -734,7 +733,7 @@ void testEpochFenceCanonicalFileAndLoss() {
   try {
     (void)guard::loadAndValidateEpochFence(policy_file, config, 7U);
     check(false, "symlink epoch fence was accepted");
-  } catch (const guard::EpochFenceError&) {
+  } catch (const guard::EpochFenceError &) {
   }
 
   ::unlink(state_file.c_str());
@@ -743,14 +742,14 @@ void testEpochFenceCanonicalFileAndLoss() {
   try {
     (void)guard::loadAndValidateEpochFence(policy_file, config, 7U);
     check(false, "directory epoch fence was accepted as a regular file");
-  } catch (const guard::EpochFenceError&) {
+  } catch (const guard::EpochFenceError &) {
   }
   ::rmdir(state_file.c_str());
   ::unlink(target_file.c_str());
   ::rmdir(root.c_str());
 
   guard::SessionClockGuard clock_guard(config, 7U, 1000000000ULL,
-                                        10000000000ULL);
+                                       10000000000ULL);
   clock_guard.failEpochFence("persisted epoch advanced", 1010000000ULL);
   check(clock_guard.aggregateState() == guard::GuardState::Lost &&
             !clock_guard.sensitiveOutputAllowed(),
@@ -761,18 +760,18 @@ void testLiveReadinessEvidence() {
   const auto config = parse(withoutRoutes(simulationConfig()));
   auto evidence = lockedEvidence(config, 70U);
 
-  check(guard::validateAggregatePublisherSet(
-            {"/xgc_session_clock_guard"}, "/xgc_session_clock_guard")
+  check(guard::validateAggregatePublisherSet({"/xgc_session_clock_guard"},
+                                             "/xgc_session_clock_guard")
             .empty(),
         "exact sole aggregate publisher must be accepted");
   check(!guard::validateAggregatePublisherSet(
              {"/external", "/xgc_session_clock_guard"},
              "/xgc_session_clock_guard")
-              .empty(),
+             .empty(),
         "an external aggregate publisher must fail readiness");
 
-  guard::LiveAdmissionTracker single_latched(
-      config, 70U, "/xgc_session_clock_guard");
+  guard::LiveAdmissionTracker single_latched(config, 70U,
+                                             "/xgc_session_clock_guard");
   single_latched.observe("/xgc_session_clock_guard", evidence);
   check(single_latched.acceptedSamples() == 1U && !single_latched.ready(),
         "one latched aggregate must never satisfy live readiness");
@@ -786,7 +785,8 @@ void testLiveReadinessEvidence() {
   check(duplicate_until_deadline.rejection().empty() &&
             duplicate_until_deadline.acceptedSamples() == 1U &&
             !duplicate_until_deadline.ready(),
-        "same-identity duplicate aggregates through the deadline must wait without satisfying readiness");
+        "same-identity duplicate aggregates through the deadline must wait "
+        "without satisfying readiness");
 
   guard::LiveAdmissionTracker duplicate_then_advance(
       config, 70U, "/xgc_session_clock_guard");
@@ -796,35 +796,33 @@ void testLiveReadinessEvidence() {
   duplicate_then_advance.observe("/xgc_session_clock_guard", evidence);
   check(duplicate_then_advance.rejection().empty() &&
             duplicate_then_advance.ready(),
-        "a same-identity duplicate followed by a greater sequence must satisfy readiness");
+        "a same-identity duplicate followed by a greater sequence must satisfy "
+        "readiness");
 
-  guard::LiveAdmissionTracker regressed_sequence(
-      config, 70U, "/xgc_session_clock_guard");
+  guard::LiveAdmissionTracker regressed_sequence(config, 70U,
+                                                 "/xgc_session_clock_guard");
   regressed_sequence.observe("/xgc_session_clock_guard", evidence);
   --evidence.status_sequence;
   regressed_sequence.observe("/xgc_session_clock_guard", evidence);
   check(!regressed_sequence.rejection().empty(),
         "a strictly lower aggregate sequence must fail readiness immediately");
 
-  guard::LiveAdmissionTracker external(
-      config, 70U, "/xgc_session_clock_guard");
+  guard::LiveAdmissionTracker external(config, 70U, "/xgc_session_clock_guard");
   external.observe("/external", evidence);
   check(!external.rejection().empty(),
         "connection caller identity must reject an external publisher");
 
-  guard::LiveAdmissionTracker unknown(
-      config, 70U, "/xgc_session_clock_guard");
+  guard::LiveAdmissionTracker unknown(config, 70U, "/xgc_session_clock_guard");
   unknown.observe("unknown", evidence);
   check(!unknown.rejection().empty(),
         "a MessageEvent without a TCPROS callerid must fail readiness");
 
-  guard::LiveAdmissionTracker live(config, 70U,
-                                    "/xgc_session_clock_guard");
+  guard::LiveAdmissionTracker live(config, 70U, "/xgc_session_clock_guard");
   live.observe("/xgc_session_clock_guard", evidence);
   ++evidence.status_sequence;
   live.observe("/xgc_session_clock_guard", evidence);
-  check(live.ready(),
-        "two locked /xgc_session_clock_guard aggregates with advancing sequence must pass");
+  check(live.ready(), "two locked /xgc_session_clock_guard aggregates with "
+                      "advancing sequence must pass");
 
   auto stale = lockedEvidence(config, 70U);
   stale.authority_age_ns = config.thresholds.max_authority_age_ns + 1U;
@@ -834,16 +832,16 @@ void testLiveReadinessEvidence() {
 
 void testSimulationIdentityAuthorityAndEvents() {
   guard::SessionClockGuard clock_guard(parse(simulationConfig()), 10U,
-                                        1000000000ULL, 5000000000ULL);
+                                       1000000000ULL, 5000000000ULL);
   std::string reason;
   auto events = clock_guard.takeEvents();
   check(events.size() == 1U &&
             events.front().kind == guard::GuardEventKind::NewEpoch,
         "new epoch event must be emitted");
 
-  const auto before_clock = clock_guard.observe(observation(
-      "px4-01", "uav1", guard::SourceDomain::Simulation, 1010000000ULL,
-      1005000000ULL, 5005000000ULL));
+  const auto before_clock = clock_guard.observe(
+      observation("px4-01", "uav1", guard::SourceDomain::Simulation,
+                  1010000000ULL, 1005000000ULL, 5005000000ULL));
   check(!before_clock.accepted &&
             before_clock.state == guard::GuardState::Initializing,
         "source data must remain closed before admitted Gazebo authority");
@@ -854,14 +852,15 @@ void testSimulationIdentityAuthorityAndEvents() {
   check(clock_guard.observeGazeboClock(
             gazeboClock(1010000000ULL, 1010000000ULL, 5010000000ULL), &reason),
         "first positive Simulation /clock must be accepted");
-  const auto first = clock_guard.observe(observation(
-      "px4-01", "uav1", guard::SourceDomain::Simulation, 1010000000ULL,
-      1011000000ULL, 5011000000ULL));
+  const auto first = clock_guard.observe(
+      observation("px4-01", "uav1", guard::SourceDomain::Simulation,
+                  1010000000ULL, 1011000000ULL, 5011000000ULL));
   check(first.accepted && first.mapped_session_stamp_ns == 1010000000ULL,
         "Simulation mapping must preserve raw Gazebo sample time exactly");
   check(first.offset_ns == 0 && first.drift_ppm == 0.0 &&
             first.jitter_ns == 0U && first.uncertainty_ns == 6000000ULL,
-        "identity mapping must report zero affine error and retain uncertainty floor");
+        "identity mapping must report zero affine error and retain uncertainty "
+        "floor");
   const auto first_twist = clock_guard.observe(observation(
       "px4-01", "uav1", guard::SourceDomain::Simulation, 1010000000ULL,
       1012000000ULL, 5012000000ULL, guard::StreamKind::Twist));
@@ -871,14 +870,15 @@ void testSimulationIdentityAuthorityAndEvents() {
   check(clock_guard.observeGazeboClock(
             gazeboClock(1020000000ULL, 1020000000ULL, 5020000000ULL), &reason),
         "monotonic Simulation /clock must continue");
-  const auto second = clock_guard.observe(observation(
-      "px4-01", "uav1", guard::SourceDomain::Simulation, 1020000000ULL,
-      1021000000ULL, 5021000000ULL));
+  const auto second = clock_guard.observe(
+      observation("px4-01", "uav1", guard::SourceDomain::Simulation,
+                  1020000000ULL, 1021000000ULL, 5021000000ULL));
   check(second.canonical_publish_allowed &&
             clock_guard.aggregateState() == guard::GuardState::Locked,
         "Simulation output must open only after identity route lock");
   events = clock_guard.takeEvents();
-  check(events.size() == 1U && events.front().kind == guard::GuardEventKind::Locked,
+  check(events.size() == 1U &&
+            events.front().kind == guard::GuardEventKind::Locked,
         "aggregate lock event must be emitted");
 
   const auto twist = clock_guard.observe(observation(
@@ -893,12 +893,14 @@ void testSimulationIdentityAuthorityAndEvents() {
   check(clock_guard.aggregateState() == guard::GuardState::Lost,
         "Gazebo rollback must immediately lose the epoch");
   events = clock_guard.takeEvents();
-  check(events.size() == 1U && events.front().kind == guard::GuardEventKind::Lost,
+  check(events.size() == 1U &&
+            events.front().kind == guard::GuardEventKind::Lost,
         "lost transition event must be emitted");
-  check(clock_guard.aggregateState() == guard::GuardState::Lost,
-        "lost Guard must remain closed because runtime epoch advance is absent");
+  check(
+      clock_guard.aggregateState() == guard::GuardState::Lost,
+      "lost Guard must remain closed because runtime epoch advance is absent");
   guard::SessionClockGuard restarted(parse(simulationConfig()), 11U,
-                                      1040000000ULL, 5040000000ULL);
+                                     1040000000ULL, 5040000000ULL);
   check(restarted.epoch() == 11U &&
             restarted.aggregateState() == guard::GuardState::Initializing,
         "a new Core-started process may begin the next persisted epoch");
@@ -906,7 +908,7 @@ void testSimulationIdentityAuthorityAndEvents() {
 
 void testAuthorityAgeAndSkewFailClosed() {
   guard::SessionClockGuard stale_guard(parse(simulationConfig()), 20U,
-                                        1000000000ULL, 5000000000ULL);
+                                       1000000000ULL, 5000000000ULL);
   std::string reason;
   check(stale_guard.observeGazeboClock(
             gazeboClock(1010000000ULL, 1010000000ULL, 5010000000ULL), &reason),
@@ -923,85 +925,92 @@ void testAuthorityAgeAndSkewFailClosed() {
         "repeated authority age violations must lose the epoch");
 
   guard::SessionClockGuard skew_guard(parse(simulationConfig()), 21U,
-                                       1000000000ULL, 5000000000ULL);
+                                      1000000000ULL, 5000000000ULL);
   check(skew_guard.observeGazeboClock(
             gazeboClock(1010000000ULL, 1010000000ULL, 5010000000ULL), &reason),
         "skew test authority should start");
-  const auto skew_one = skew_guard.observe(observation(
-      "px4-01", "uav1", guard::SourceDomain::Simulation, 1050000000ULL,
-      1011000000ULL, 5011000000ULL));
+  const auto skew_one = skew_guard.observe(
+      observation("px4-01", "uav1", guard::SourceDomain::Simulation,
+                  1050000000ULL, 1011000000ULL, 5011000000ULL));
   check(!skew_one.accepted && skew_one.state == guard::GuardState::Degraded,
         "first Gazebo/source skew violation must close output");
-  const auto skew_two = skew_guard.observe(observation(
-      "px4-01", "uav1", guard::SourceDomain::Simulation, 1060000000ULL,
-      1012000000ULL, 5012000000ULL));
+  const auto skew_two = skew_guard.observe(
+      observation("px4-01", "uav1", guard::SourceDomain::Simulation,
+                  1060000000ULL, 1012000000ULL, 5012000000ULL));
   check(!skew_two.accepted && skew_two.state == guard::GuardState::Lost,
         "repeated Gazebo/source skew violations must lose the epoch");
 }
 
 void testStartupLockTimeoutIsSeparateFromRuntimeFreshness() {
   const auto zero_simulation = parse(withoutRoutes(simulationConfig()));
-  guard::SessionClockGuard authority_within_grace(
-      zero_simulation, 22U, 1000000000ULL, 5000000000ULL);
+  guard::SessionClockGuard authority_within_grace(zero_simulation, 22U,
+                                                  1000000000ULL, 5000000000ULL);
   authority_within_grace.poll(1300000000ULL, 5300000000ULL);
   check(authority_within_grace.aggregateState() ==
             guard::GuardState::Initializing,
-        "missing initial Gazebo clock must remain initializing inside startup timeout");
+        "missing initial Gazebo clock must remain initializing inside startup "
+        "timeout");
   std::string reason;
-  check(authority_within_grace.observeGazeboClock(
-            gazeboClock(1400000000ULL, 1400000000ULL, 5400000000ULL),
-            &reason) &&
-            authority_within_grace.aggregateState() == guard::GuardState::Locked,
-        "first positive Gazebo clock may arrive after runtime freshness but inside startup timeout");
+  check(
+      authority_within_grace.observeGazeboClock(
+          gazeboClock(1400000000ULL, 1400000000ULL, 5400000000ULL), &reason) &&
+          authority_within_grace.aggregateState() == guard::GuardState::Locked,
+      "first positive Gazebo clock may arrive after runtime freshness but "
+      "inside startup timeout");
   authority_within_grace.poll(1460000000ULL, 5460000000ULL);
   check(authority_within_grace.aggregateState() == guard::GuardState::Degraded,
-        "seen Gazebo authority must immediately return to the 50 ms runtime freshness bound");
+        "seen Gazebo authority must immediately return to the 50 ms runtime "
+        "freshness bound");
 
-  guard::SessionClockGuard authority_timeout(
-      zero_simulation, 23U, 1000000000ULL, 5000000000ULL);
+  guard::SessionClockGuard authority_timeout(zero_simulation, 23U,
+                                             1000000000ULL, 5000000000ULL);
   authority_timeout.poll(1500000001ULL, 5500000001ULL);
   check(authority_timeout.aggregateState() == guard::GuardState::Lost &&
             authority_timeout.authorityStatus().reason.find(
                 "startup lock timeout") != std::string::npos,
-        "missing initial Gazebo clock past startup timeout must hard-lose the epoch");
-  check(!authority_timeout.observeGazeboClock(
-            gazeboClock(1500000001ULL, 1500000001ULL, 5500000001ULL),
-            &reason) &&
-            authority_timeout.aggregateState() == guard::GuardState::Lost,
-        "late Gazebo clock cannot recover a startup-timeout epoch");
+        "missing initial Gazebo clock past startup timeout must hard-lose the "
+        "epoch");
+  check(
+      !authority_timeout.observeGazeboClock(
+          gazeboClock(1500000001ULL, 1500000001ULL, 5500000001ULL), &reason) &&
+          authority_timeout.aggregateState() == guard::GuardState::Lost,
+      "late Gazebo clock cannot recover a startup-timeout epoch");
 
   const auto physical = parse(physicalConfig());
-  guard::SessionClockGuard route_within_grace(
-      physical, 32U, 1000000000ULL, 10000000000ULL);
+  guard::SessionClockGuard route_within_grace(physical, 32U, 1000000000ULL,
+                                              10000000000ULL);
   route_within_grace.poll(1300000000ULL, 10300000000ULL);
   check(route_within_grace.aggregateState() == guard::GuardState::Initializing,
-        "unseen pose/twist must remain initializing inside route startup timeout");
-  const auto pose = route_within_grace.observe(observation(
-      "scout-01", "ugv1", guard::SourceDomain::Physical, 2400000000ULL,
-      1400000000ULL, 10400000000ULL));
+        "unseen pose/twist must remain initializing inside route startup "
+        "timeout");
+  const auto pose = route_within_grace.observe(
+      observation("scout-01", "ugv1", guard::SourceDomain::Physical,
+                  2400000000ULL, 1400000000ULL, 10400000000ULL));
   const auto twist = route_within_grace.observe(observation(
       "scout-01", "ugv1", guard::SourceDomain::Physical, 2400000000ULL,
       1410000000ULL, 10410000000ULL, guard::StreamKind::Twist));
-  const auto second_pose = route_within_grace.observe(observation(
-      "scout-01", "ugv1", guard::SourceDomain::Physical, 2420000000ULL,
-      1420000000ULL, 10420000000ULL));
+  const auto second_pose = route_within_grace.observe(
+      observation("scout-01", "ugv1", guard::SourceDomain::Physical,
+                  2420000000ULL, 1420000000ULL, 10420000000ULL));
   check(pose.accepted && twist.accepted &&
             second_pose.canonical_publish_allowed,
-        "both raw streams may first arrive after runtime freshness but inside startup timeout");
+        "both raw streams may first arrive after runtime freshness but inside "
+        "startup timeout");
   route_within_grace.poll(1480000000ULL, 10480000000ULL);
   check(route_within_grace.aggregateState() == guard::GuardState::Degraded,
-        "seen raw streams must immediately return to the 50 ms runtime freshness bound");
+        "seen raw streams must immediately return to the 50 ms runtime "
+        "freshness bound");
 
-  guard::SessionClockGuard route_timeout(
-      physical, 33U, 1000000000ULL, 10000000000ULL);
+  guard::SessionClockGuard route_timeout(physical, 33U, 1000000000ULL,
+                                         10000000000ULL);
   route_timeout.poll(1500000001ULL, 10500000001ULL);
   check(route_timeout.aggregateState() == guard::GuardState::Lost &&
-            route_timeout.routeStatus("scout-01").reason.find(
-                "startup lock timeout") != std::string::npos,
+            route_timeout.routeStatus("scout-01")
+                    .reason.find("startup lock timeout") != std::string::npos,
         "missing pose/twist past startup timeout must hard-lose the epoch");
-  const auto late_pose = route_timeout.observe(observation(
-      "scout-01", "ugv1", guard::SourceDomain::Physical, 2500000000ULL,
-      1500000001ULL, 10500000001ULL));
+  const auto late_pose = route_timeout.observe(
+      observation("scout-01", "ugv1", guard::SourceDomain::Physical,
+                  2500000000ULL, 1500000001ULL, 10500000001ULL));
   check(!late_pose.accepted && late_pose.state == guard::GuardState::Lost,
         "late raw input cannot recover a startup-timeout epoch");
 }
@@ -1013,120 +1022,125 @@ void testAffineQualityGatesStartAtFrozenMinimumSamples() {
   replaceOnce(&config_text, "threshold.lost_after_failures=2",
               "threshold.lost_after_failures=3");
 
-  const auto observe_pair = [](guard::SessionClockGuard* clock_guard,
+  const auto observe_pair = [](guard::SessionClockGuard *clock_guard,
                                std::uint64_t raw_ns,
                                std::uint64_t monotonic_ns) {
-    const std::uint64_t wall_ns = 10000000000ULL +
-                                  (monotonic_ns - 1000000000ULL);
-    const auto pose = clock_guard->observe(observation(
-        "scout-01", "ugv1", guard::SourceDomain::Physical, raw_ns,
-        monotonic_ns, wall_ns));
+    const std::uint64_t wall_ns =
+        10000000000ULL + (monotonic_ns - 1000000000ULL);
+    const auto pose = clock_guard->observe(
+        observation("scout-01", "ugv1", guard::SourceDomain::Physical, raw_ns,
+                    monotonic_ns, wall_ns));
     const auto twist = clock_guard->observe(observation(
         "scout-01", "ugv1", guard::SourceDomain::Physical, raw_ns,
-        monotonic_ns + 1000ULL, wall_ns + 1000ULL,
-        guard::StreamKind::Twist));
+        monotonic_ns + 1000ULL, wall_ns + 1000ULL, guard::StreamKind::Twist));
     return std::array<guard::TimestampEnvelope, 2>{pose, twist};
   };
 
-  guard::SessionClockGuard jitter_guard(parse(config_text), 34U,
-                                         1000000000ULL,
-                                         10000000000ULL);
+  guard::SessionClockGuard jitter_guard(parse(config_text), 34U, 1000000000ULL,
+                                        10000000000ULL);
   const std::array<std::uint64_t, 8> startup_jitter_ns{
       0U, 200000U, 200000U, 200000U, 0U, 0U, 0U, 0U};
   for (std::size_t index = 0U; index < startup_jitter_ns.size(); ++index) {
-    const std::uint64_t tick = static_cast<std::uint64_t>(index + 1U) *
-                               10000000ULL;
-    const auto envelopes = observe_pair(
-        &jitter_guard, 2000000000ULL + tick,
-        1000000000ULL + tick + startup_jitter_ns[index]);
+    const std::uint64_t tick =
+        static_cast<std::uint64_t>(index + 1U) * 10000000ULL;
+    const auto envelopes =
+        observe_pair(&jitter_guard, 2000000000ULL + tick,
+                     1000000000ULL + tick + startup_jitter_ns[index]);
     check(envelopes[0].accepted && envelopes[1].accepted,
-          "sub-minimum 100 Hz affine startup jitter must collect without counting a quality failure");
+          "sub-minimum 100 Hz affine startup jitter must collect without "
+          "counting a quality failure");
     if (index == 1U) {
       check(envelopes[0].drift_ppm > 5000.0,
-            "a provisional pre-minimum affine drift above the frozen limit must still be collected");
+            "a provisional pre-minimum affine drift above the frozen limit "
+            "must still be collected");
     }
     if (index + 1U < startup_jitter_ns.size()) {
       check(jitter_guard.aggregateState() == guard::GuardState::Initializing &&
                 !envelopes[0].canonical_publish_allowed &&
                 !envelopes[1].canonical_publish_allowed,
-            "affine startup must remain initializing with canonical output closed before min_lock_samples");
+            "affine startup must remain initializing with canonical output "
+            "closed before min_lock_samples");
     } else {
       check(envelopes[0].canonical_publish_allowed &&
                 envelopes[1].canonical_publish_allowed,
-            "the eighth healthy affine sample must publish canonical envelopes after passing the full gate");
+            "the eighth healthy affine sample must publish canonical envelopes "
+            "after passing the full gate");
     }
   }
   check(jitter_guard.aggregateState() == guard::GuardState::Locked &&
             jitter_guard.sensitiveOutputAllowed() &&
             jitter_guard.routeStatus("scout-01").consecutive_failures == 0U,
-        "the first complete in-threshold affine estimate must lock at min_lock_samples");
+        "the first complete in-threshold affine estimate must lock at "
+        "min_lock_samples");
   check(jitter_guard.routeStatus("scout-01").healthy_samples == 8U,
-        "the eighth unique raw sample must be the first complete affine estimate");
+        "the eighth unique raw sample must be the first complete affine "
+        "estimate");
 
   guard::SessionClockGuard over_limit_guard(parse(config_text), 35U,
-                                             1000000000ULL,
-                                             10000000000ULL);
+                                            1000000000ULL, 10000000000ULL);
   const std::array<std::uint64_t, 8> receive_offset_ns{
-      0U, 10000000U, 10000000U, 10000000U,
+      0U,        10000000U, 10000000U, 10000000U,
       10000000U, 10000000U, 10000000U, 25000000U};
   for (std::size_t index = 0U; index < 7U; ++index) {
-    const std::uint64_t tick = static_cast<std::uint64_t>(index + 1U) *
-                               10000000ULL;
-    const auto envelopes = observe_pair(
-        &over_limit_guard, 3000000000ULL + tick,
-        1000000000ULL + tick + receive_offset_ns[index]);
+    const std::uint64_t tick =
+        static_cast<std::uint64_t>(index + 1U) * 10000000ULL;
+    const auto envelopes =
+        observe_pair(&over_limit_guard, 3000000000ULL + tick,
+                     1000000000ULL + tick + receive_offset_ns[index]);
     check(envelopes[0].accepted && envelopes[1].accepted &&
               over_limit_guard.aggregateState() ==
                   guard::GuardState::Initializing &&
               !envelopes[0].canonical_publish_allowed &&
               !envelopes[1].canonical_publish_allowed,
-          "an over-limit affine trend must still collect without canonical output before the frozen minimum");
+          "an over-limit affine trend must still collect without canonical "
+          "output before the frozen minimum");
     if (index >= 5U) {
       check(envelopes[0].uncertainty_ns > 10000000ULL,
-            "pre-minimum affine uncertainty above the frozen limit must be deferred while canonical remains closed");
+            "pre-minimum affine uncertainty above the frozen limit must be "
+            "deferred while canonical remains closed");
     }
   }
   const std::uint64_t full_tick = 80000000ULL;
   const std::uint64_t full_monotonic =
       1000000000ULL + full_tick + receive_offset_ns.back();
-  const auto first_complete = over_limit_guard.observe(observation(
-      "scout-01", "ugv1", guard::SourceDomain::Physical,
-      3000000000ULL + full_tick, full_monotonic,
-      10000000000ULL + (full_monotonic - 1000000000ULL)));
-  check(!first_complete.accepted &&
-            first_complete.state == guard::GuardState::Degraded &&
-            !first_complete.canonical_publish_allowed &&
-            first_complete.reason.find("offset step exceeds frozen threshold") !=
-                std::string::npos &&
-            first_complete.reason.find("drift exceeds frozen threshold") !=
-                std::string::npos &&
-            first_complete.reason.find("jitter exceeds frozen threshold") !=
-                std::string::npos &&
-            first_complete.reason.find("uncertainty exceeds frozen threshold") !=
-                std::string::npos &&
-            over_limit_guard.routeStatus("scout-01").consecutive_failures == 1U &&
-            !over_limit_guard.sensitiveOutputAllowed(),
-        "the first complete over-limit affine estimate must execute the full quality gate");
+  const auto first_complete = over_limit_guard.observe(
+      observation("scout-01", "ugv1", guard::SourceDomain::Physical,
+                  3000000000ULL + full_tick, full_monotonic,
+                  10000000000ULL + (full_monotonic - 1000000000ULL)));
+  check(
+      !first_complete.accepted &&
+          first_complete.state == guard::GuardState::Degraded &&
+          !first_complete.canonical_publish_allowed &&
+          first_complete.reason.find("offset step exceeds frozen threshold") !=
+              std::string::npos &&
+          first_complete.reason.find("drift exceeds frozen threshold") !=
+              std::string::npos &&
+          first_complete.reason.find("jitter exceeds frozen threshold") !=
+              std::string::npos &&
+          first_complete.reason.find("uncertainty exceeds frozen threshold") !=
+              std::string::npos &&
+          over_limit_guard.routeStatus("scout-01").consecutive_failures == 1U &&
+          !over_limit_guard.sensitiveOutputAllowed(),
+      "the first complete over-limit affine estimate must execute the full "
+      "quality gate");
 
-  guard::SessionClockGuard runtime_guard(parse(config_text), 36U,
-                                          1000000000ULL,
-                                          10000000000ULL);
+  guard::SessionClockGuard runtime_guard(parse(config_text), 36U, 1000000000ULL,
+                                         10000000000ULL);
   for (std::size_t index = 0U; index < 8U; ++index) {
-    const std::uint64_t tick = static_cast<std::uint64_t>(index + 1U) *
-                               10000000ULL;
-    const auto envelopes = observe_pair(
-        &runtime_guard, 4000000000ULL + tick,
-        1000000000ULL + tick);
+    const std::uint64_t tick =
+        static_cast<std::uint64_t>(index + 1U) * 10000000ULL;
+    const auto envelopes = observe_pair(&runtime_guard, 4000000000ULL + tick,
+                                        1000000000ULL + tick);
     check(envelopes[0].accepted && envelopes[1].accepted,
           "runtime-spike fixture must establish a healthy affine lock");
   }
   check(runtime_guard.aggregateState() == guard::GuardState::Locked,
-        "runtime-spike fixture must be locked before injecting a receive-time spike");
+        "runtime-spike fixture must be locked before injecting a receive-time "
+        "spike");
   const std::uint64_t spike_monotonic = 1100000000ULL;
   const auto runtime_spike = runtime_guard.observe(observation(
-      "scout-01", "ugv1", guard::SourceDomain::Physical,
-      4090000000ULL, spike_monotonic,
-      10000000000ULL + (spike_monotonic - 1000000000ULL)));
+      "scout-01", "ugv1", guard::SourceDomain::Physical, 4090000000ULL,
+      spike_monotonic, 10000000000ULL + (spike_monotonic - 1000000000ULL)));
   check(!runtime_spike.accepted &&
             runtime_spike.state == guard::GuardState::Degraded &&
             !runtime_spike.canonical_publish_allowed &&
@@ -1139,17 +1153,18 @@ void testAffineQualityGatesStartAtFrozenMinimumSamples() {
 
 void testPhysicalStationAuthorityAndSteadyFreshness() {
   guard::SessionClockGuard clock_guard(parse(physicalConfig()), 30U,
-                                        1000000000ULL, 10000000000ULL);
-  const auto first = clock_guard.observe(observation(
-      "scout-01", "ugv1", guard::SourceDomain::Physical, 2010000000ULL,
-      1010000000ULL, 10010000000ULL));
+                                       1000000000ULL, 10000000000ULL);
+  const auto first = clock_guard.observe(
+      observation("scout-01", "ugv1", guard::SourceDomain::Physical,
+                  2010000000ULL, 1010000000ULL, 10010000000ULL));
   const auto first_twist = clock_guard.observe(observation(
       "scout-01", "ugv1", guard::SourceDomain::Physical, 2010000000ULL,
       1011000000ULL, 10011000000ULL, guard::StreamKind::Twist));
-  const auto second = clock_guard.observe(observation(
-      "scout-01", "ugv1", guard::SourceDomain::Physical, 2020000000ULL,
-      1020000000ULL, 10020000000ULL));
-  check(first.accepted && first_twist.accepted && second.canonical_publish_allowed,
+  const auto second = clock_guard.observe(
+      observation("scout-01", "ugv1", guard::SourceDomain::Physical,
+                  2020000000ULL, 1020000000ULL, 10020000000ULL));
+  check(first.accepted && first_twist.accepted &&
+            second.canonical_publish_allowed,
         "healthy Physical affine samples must lock");
   check(second.mapped_session_stamp_ns == 10020000000ULL,
         "Physical mapping must target W0 plus steady elapsed");
@@ -1161,20 +1176,22 @@ void testPhysicalStationAuthorityAndSteadyFreshness() {
         "station wall error/step must immediately lose without re-anchoring");
 
   guard::SessionClockGuard silence_guard(parse(physicalConfig()), 31U,
-                                          1000000000ULL, 10000000000ULL);
-  for (const auto stream : {guard::StreamKind::Pose, guard::StreamKind::Twist}) {
-    silence_guard.observe(observation(
-        "scout-01", "ugv1", guard::SourceDomain::Physical, 2010000000ULL,
-        1010000000ULL, 10010000000ULL, stream));
-    silence_guard.observe(observation(
-        "scout-01", "ugv1", guard::SourceDomain::Physical, 2020000000ULL,
-        1020000000ULL, 10020000000ULL, stream));
+                                         1000000000ULL, 10000000000ULL);
+  for (const auto stream :
+       {guard::StreamKind::Pose, guard::StreamKind::Twist}) {
+    silence_guard.observe(
+        observation("scout-01", "ugv1", guard::SourceDomain::Physical,
+                    2010000000ULL, 1010000000ULL, 10010000000ULL, stream));
+    silence_guard.observe(
+        observation("scout-01", "ugv1", guard::SourceDomain::Physical,
+                    2020000000ULL, 1020000000ULL, 10020000000ULL, stream));
   }
   check(silence_guard.sensitiveOutputAllowed(),
         "both Physical streams should lock before silence");
   silence_guard.poll(1080000000ULL, 10080000000ULL);
   check(silence_guard.aggregateState() == guard::GuardState::Degraded,
-        "steady-clock stream age must degrade even with a perfectly tracking wall");
+        "steady-clock stream age must degrade even with a perfectly tracking "
+        "wall");
   silence_guard.poll(1105000000ULL, 10105000000ULL);
   check(silence_guard.aggregateState() == guard::GuardState::Lost,
         "repeated steady-clock silence must lose the epoch");
@@ -1182,7 +1199,7 @@ void testPhysicalStationAuthorityAndSteadyFreshness() {
 
 void testHybridPrivateClockRtfAndBodyProjection() {
   guard::SessionClockGuard clock_guard(parse(hybridConfig()), 40U,
-                                        1000000000ULL, 10000000000ULL);
+                                       1000000000ULL, 10000000000ULL);
   std::string reason;
   check(clock_guard.observeGazeboClock(
             gazeboClock(2010000000ULL, 1010000000ULL, 10010000000ULL), &reason),
@@ -1196,14 +1213,15 @@ void testHybridPrivateClockRtfAndBodyProjection() {
             clock_guard.authorityStatus().gazebo_real_time_factor == 1.0,
         "Hybrid authority must report a healthy 1.0 RTF");
 
-  auto sim_first = clock_guard.observe(observation(
-      "px4-01", "uav1", guard::SourceDomain::Simulation, 2020000000ULL,
-      1021000000ULL, 10021000000ULL));
-  auto physical_first = clock_guard.observe(observation(
-      "scout-01", "ugv1", guard::SourceDomain::Physical, 3020000000ULL,
-      1022000000ULL, 10022000000ULL));
-  check(sim_first.accepted && physical_first.accepted,
-        "both Hybrid source domains must enter the same affine Session timeline");
+  auto sim_first = clock_guard.observe(
+      observation("px4-01", "uav1", guard::SourceDomain::Simulation,
+                  2020000000ULL, 1021000000ULL, 10021000000ULL));
+  auto physical_first = clock_guard.observe(
+      observation("scout-01", "ugv1", guard::SourceDomain::Physical,
+                  3020000000ULL, 1022000000ULL, 10022000000ULL));
+  check(
+      sim_first.accepted && physical_first.accepted,
+      "both Hybrid source domains must enter the same affine Session timeline");
   const auto sim_first_twist = clock_guard.observe(observation(
       "px4-01", "uav1", guard::SourceDomain::Simulation, 2020000000ULL,
       1023000000ULL, 10023000000ULL, guard::StreamKind::Twist));
@@ -1216,12 +1234,12 @@ void testHybridPrivateClockRtfAndBodyProjection() {
   check(clock_guard.observeGazeboClock(
             gazeboClock(2030000000ULL, 1030000000ULL, 10030000000ULL), &reason),
         "next private Hybrid clock should remain within RTF bounds");
-  const auto sim_second = clock_guard.observe(observation(
-      "px4-01", "uav1", guard::SourceDomain::Simulation, 2030000000ULL,
-      1031000000ULL, 10031000000ULL));
-  const auto physical_second = clock_guard.observe(observation(
-      "scout-01", "ugv1", guard::SourceDomain::Physical, 3030000000ULL,
-      1032000000ULL, 10032000000ULL));
+  const auto sim_second = clock_guard.observe(
+      observation("px4-01", "uav1", guard::SourceDomain::Simulation,
+                  2030000000ULL, 1031000000ULL, 10031000000ULL));
+  const auto physical_second = clock_guard.observe(
+      observation("scout-01", "ugv1", guard::SourceDomain::Physical,
+                  3030000000ULL, 1032000000ULL, 10032000000ULL));
   check(sim_second.accepted && physical_second.canonical_publish_allowed,
         "Hybrid output must open only after both route mappings lock");
   check(physical_second.source_body == "ugv1" &&
@@ -1249,21 +1267,22 @@ void testPureModeAuthorityOnlySessions() {
   check(guard::validateLockedAdmission(admission, zero_simulation, 60U).empty(),
         "readiness must accept a locked digest-bound zero-route Simulation");
   admission.state = guard::GuardState::Initializing;
-  check(!guard::validateLockedAdmission(admission, zero_simulation, 60U).empty(),
-        "readiness must reject an initializing aggregate message");
+  check(
+      !guard::validateLockedAdmission(admission, zero_simulation, 60U).empty(),
+      "readiness must reject an initializing aggregate message");
   admission = lockedEvidence(zero_simulation, 60U);
   admission.policy_sha256 = std::string(64U, '0');
-  check(!guard::validateLockedAdmission(admission, zero_simulation, 60U).empty(),
-        "readiness must reject a stale or foreign policy digest");
-  guard::SessionClockGuard simulation_guard(zero_simulation, 60U,
-                                             1000000000ULL, 5000000000ULL);
+  check(
+      !guard::validateLockedAdmission(admission, zero_simulation, 60U).empty(),
+      "readiness must reject a stale or foreign policy digest");
+  guard::SessionClockGuard simulation_guard(zero_simulation, 60U, 1000000000ULL,
+                                            5000000000ULL);
   std::string reason;
   check(simulation_guard.aggregateState() == guard::GuardState::Initializing &&
             !simulation_guard.sensitiveOutputAllowed(),
         "authority-only Simulation must wait for admitted global /clock");
   check(simulation_guard.observeGazeboClock(
-            gazeboClock(1010000000ULL, 1010000000ULL, 5010000000ULL),
-            &reason),
+            gazeboClock(1010000000ULL, 1010000000ULL, 5010000000ULL), &reason),
         "authority-only Simulation must accept its first positive /clock");
   check(simulation_guard.aggregateState() == guard::GuardState::Locked &&
             simulation_guard.sensitiveOutputAllowed() &&
@@ -1284,8 +1303,8 @@ void testPureModeAuthorityOnlySessions() {
   const auto zero_physical = parse(withoutRoutes(physicalConfig()));
   check(zero_physical.routes.empty(),
         "pure Physical must permit an authority-only zero-route contract");
-  guard::SessionClockGuard physical_guard(zero_physical, 61U,
-                                           1000000000ULL, 10000000000ULL);
+  guard::SessionClockGuard physical_guard(zero_physical, 61U, 1000000000ULL,
+                                          10000000000ULL);
   check(physical_guard.aggregateState() == guard::GuardState::Locked &&
             physical_guard.sensitiveOutputAllowed() &&
             physical_guard.routeStatuses().empty(),
@@ -1298,15 +1317,16 @@ void testPureModeAuthorityOnlySessions() {
   check(physical_guard.aggregateState() == guard::GuardState::Lost,
         "authority-only Physical must lose immediately on station wall step");
   check(physical_guard.aggregateState() == guard::GuardState::Lost,
-        "authority-only loss must remain closed without a runtime epoch entrypoint");
+        "authority-only loss must remain closed without a runtime epoch "
+        "entrypoint");
 
   expectConfigError([&]() { parse(withoutRoutes(hybridConfig())); },
                     "Hybrid must reject an authority-only zero-route contract");
 }
 
-}  // namespace
+} // namespace
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   testSha256();
   testFrozenModesRoutesAndTopics();
   testCanonicalParserAndEpochText();
@@ -1320,7 +1340,9 @@ int main(int argc, char** argv) {
   testHybridPrivateClockRtfAndBodyProjection();
   testPureModeAuthorityOnlySessions();
   if ((argc - 1) % 2 != 0) {
-    check(false, "core test config arguments must be repeated <config> <sha256> pairs");
+    check(
+        false,
+        "core test config arguments must be repeated <config> <sha256> pairs");
   } else {
     for (int index = 1; index + 1 < argc; index += 2) {
       try {
@@ -1328,7 +1350,7 @@ int main(int argc, char** argv) {
             guard::FrozenConfigLoader::loadFile(argv[index], argv[index + 1]);
         check(!config.session_id.empty(),
               "verified example config did not preserve its Session identity");
-      } catch (const std::exception& error) {
+      } catch (const std::exception &error) {
         check(false, std::string("verified example config failed to load: ") +
                          error.what());
       }

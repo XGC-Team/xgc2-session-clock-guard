@@ -37,28 +37,27 @@ struct AggregateAdmissionEvidence {
   std::string delay_timestamp_policy;
 };
 
-std::string validateLockedAdmission(const AggregateAdmissionEvidence& evidence,
-                                    const FrozenConfig& config,
+std::string validateLockedAdmission(const AggregateAdmissionEvidence &evidence,
+                                    const FrozenConfig &config,
                                     std::uint64_t expected_epoch);
 
-std::string validateAggregatePublisherSet(
-    const std::vector<std::string>& publishers,
-    const std::string& expected_publisher);
+std::string
+validateAggregatePublisherSet(const std::vector<std::string> &publishers,
+                              const std::string &expected_publisher);
 
 class LiveAdmissionTracker {
- public:
-  LiveAdmissionTracker(const FrozenConfig& config,
-                       std::uint64_t expected_epoch,
+public:
+  LiveAdmissionTracker(const FrozenConfig &config, std::uint64_t expected_epoch,
                        std::string expected_publisher);
 
-  void observe(const std::string& publisher,
-               const AggregateAdmissionEvidence& evidence);
+  void observe(const std::string &publisher,
+               const AggregateAdmissionEvidence &evidence);
   bool ready() const { return accepted_samples_ >= 2U && rejection_.empty(); }
   std::size_t acceptedSamples() const { return accepted_samples_; }
-  const std::string& rejection() const { return rejection_; }
+  const std::string &rejection() const { return rejection_; }
 
- private:
-  const FrozenConfig* config_{nullptr};
+private:
+  const FrozenConfig *config_{nullptr};
   std::uint64_t expected_epoch_{0U};
   std::string expected_publisher_;
   std::string observed_publisher_;
@@ -67,4 +66,4 @@ class LiveAdmissionTracker {
   std::string rejection_;
 };
 
-}  // namespace xgc_session_clock_guard
+} // namespace xgc_session_clock_guard

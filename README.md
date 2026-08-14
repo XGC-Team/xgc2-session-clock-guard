@@ -228,6 +228,12 @@ tests/run_core_tests.sh
 tests/static_contract_test.sh
 ```
 
+Cross-repository loader, parameter normalization, and admission tests belong to
+the XGC2 product acceptance suite. A standalone leaf must not import the XGC2
+product's internal Core Go packages or search for an adjacent checkout. Central
+`xgc2-devops` release acceptance owns APT staging plus installed product/Core
+live integration evidence.
+
 Formal delivery is Ubuntu 20.04 Focal, ROS Noetic, amd64 and arm64. The package
 installs its Process definition under `/usr/share/xgc2/process-definitions` and
 owns canonical/sidecar roots exclusively while sharing raw source roots.
@@ -268,3 +274,18 @@ canonical output closes. They must also prove that a live Guard blocks Core's
 nonblocking exclusive allocation, that stop/confirmed-exit permits a greater
 persisted epoch, and that only the newly constructed Guard at that epoch can
 lock again.
+
+## Standalone delivery
+
+The canonical source repository is `lxk36/xgc2-session-clock-guard` on the
+`noetic` branch. Ordinary pushes run repository compliance, C++ quality,
+ROS-free source tests, and native amd64/arm64 Focal/Noetic package builds. The
+release workflow accepts only an exact source commit and product version and
+produces `xgc2.build-artifact.v1` Deb evidence retained for 14 days.
+
+The leaf repository never publishes or mutates the production APT repository.
+Central `xgc2-devops` release orchestration alone consumes the trusted build
+artifacts, stages the APT overlay, records approval, and publishes or rolls back
+the repository. Debian revision `0.1.0-1` belongs to the earlier subtree source;
+this standalone lineage starts at `0.1.0-2` and must never overwrite that
+historical package identity.

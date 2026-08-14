@@ -1,6 +1,6 @@
 schema: xgc2.release-contract.v1
 product: xgc2-session-clock-guard
-version: 0.1.0-1
+version: 0.1.0-2
 source:
   ros_distro: noetic
   ubuntu_distribution: focal
@@ -40,11 +40,13 @@ integration_gates:
 - current_core_process_loader_discovery
 - current_core_parameter_normalization
 - current_core_resource_claim_resolution
+- focal_noetic_amd64_source_package_install_ci_run_31440036101
+- focal_noetic_arm64_source_package_install_ci_run_31440036101
+integration_ownership:
+  current_core_loader_and_admission: xgc2_product_acceptance
+  apt_publication_and_installed_live_evidence: xgc2_devops_central_release_acceptance
 integration_gaps:
-- standalone_product_repository_not_initialized_or_published
-- parent_repository_gitlink_not_registered
 - apt_repository_publication_not_completed
-- arm64_matrix_configured_without_successful_run_evidence
 - apt_installed_product_and_current_core_not_live_integrated
 live_gates_not_satisfied_by_ci:
 - gazebo_vrpn_v24_world_sim_time_on_wire

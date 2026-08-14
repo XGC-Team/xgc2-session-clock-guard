@@ -12,16 +12,17 @@ std::uint64_t absoluteUnsigned(std::int64_t value) {
     return static_cast<std::uint64_t>(value);
   }
   if (value == std::numeric_limits<std::int64_t>::min()) {
-    return static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max()) +
+    return static_cast<std::uint64_t>(
+               std::numeric_limits<std::int64_t>::max()) +
            1U;
   }
   return static_cast<std::uint64_t>(-value);
 }
 
-}  // namespace
+} // namespace
 
-std::string validateLockedAdmission(const AggregateAdmissionEvidence& evidence,
-                                    const FrozenConfig& config,
+std::string validateLockedAdmission(const AggregateAdmissionEvidence &evidence,
+                                    const FrozenConfig &config,
                                     std::uint64_t expected_epoch) {
   if (evidence.session_id != config.session_id) {
     return "aggregate Session identity does not match frozen policy";
@@ -33,7 +34,8 @@ std::string validateLockedAdmission(const AggregateAdmissionEvidence& evidence,
     return "aggregate policy digest does not match verified policy bytes";
   }
   if (evidence.run_mode != config.run_mode ||
-      evidence.session_time_authority != toString(config.session_time_authority) ||
+      evidence.session_time_authority !=
+          toString(config.session_time_authority) ||
       evidence.clock_mapping != toString(config.clock_mapping)) {
     return "aggregate mode, authority, or mapping does not match frozen policy";
   }
@@ -100,27 +102,25 @@ std::string validateLockedAdmission(const AggregateAdmissionEvidence& evidence,
   return {};
 }
 
-std::string validateAggregatePublisherSet(
-    const std::vector<std::string>& publishers,
-    const std::string& expected_publisher) {
+std::string
+validateAggregatePublisherSet(const std::vector<std::string> &publishers,
+                              const std::string &expected_publisher) {
   if (publishers.size() != 1U || publishers.front() != expected_publisher) {
-    return "aggregate status must have exactly one ROS master publisher named " +
+    return "aggregate status must have exactly one ROS master publisher "
+           "named " +
            expected_publisher;
   }
   return {};
 }
 
-LiveAdmissionTracker::LiveAdmissionTracker(
-    const FrozenConfig& config,
-    std::uint64_t expected_epoch,
-    std::string expected_publisher)
-    : config_(&config),
-      expected_epoch_(expected_epoch),
+LiveAdmissionTracker::LiveAdmissionTracker(const FrozenConfig &config,
+                                           std::uint64_t expected_epoch,
+                                           std::string expected_publisher)
+    : config_(&config), expected_epoch_(expected_epoch),
       expected_publisher_(std::move(expected_publisher)) {}
 
-void LiveAdmissionTracker::observe(
-    const std::string& publisher,
-    const AggregateAdmissionEvidence& evidence) {
+void LiveAdmissionTracker::observe(const std::string &publisher,
+                                   const AggregateAdmissionEvidence &evidence) {
   if (!rejection_.empty() || ready()) {
     return;
   }
@@ -150,4 +150,4 @@ void LiveAdmissionTracker::observe(
   ++accepted_samples_;
 }
 
-}  // namespace xgc_session_clock_guard
+} // namespace xgc_session_clock_guard

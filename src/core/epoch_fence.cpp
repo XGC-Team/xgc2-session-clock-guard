@@ -14,29 +14,29 @@
 namespace xgc_session_clock_guard {
 namespace {
 
-constexpr const char* kEpochStateSchema =
+constexpr const char *kEpochStateSchema =
     "xgc.session-clock-policy.epoch-state.v1";
 constexpr std::size_t kMaximumEpochStateBytes = 64U << 10U;
-constexpr const char* kEpochStateFileName = "epoch-state.json";
-constexpr const char* kEpochLockFileName = "epoch-state.lock";
+constexpr const char *kEpochStateFileName = "epoch-state.json";
+constexpr const char *kEpochLockFileName = "epoch-state.lock";
 
 class FileDescriptor {
- public:
+public:
   explicit FileDescriptor(int value) : value_(value) {}
   ~FileDescriptor() {
     if (value_ >= 0) {
       ::close(value_);
     }
   }
-  FileDescriptor(const FileDescriptor&) = delete;
-  FileDescriptor& operator=(const FileDescriptor&) = delete;
+  FileDescriptor(const FileDescriptor &) = delete;
+  FileDescriptor &operator=(const FileDescriptor &) = delete;
   int get() const { return value_; }
 
- private:
+private:
   int value_{-1};
 };
 
-bool lowerHexDigest(const std::string& value) {
+bool lowerHexDigest(const std::string &value) {
   if (value.size() != 64U) {
     return false;
   }
@@ -53,7 +53,7 @@ bool continuation(unsigned char value) {
   return value >= 0x80U && value <= 0xbfU;
 }
 
-std::size_t canonicalUtf8Length(const std::string& input,
+std::size_t canonicalUtf8Length(const std::string &input,
                                 std::size_t position) {
   const auto lead = static_cast<unsigned char>(input[position]);
   if (lead <= 0x7fU) {
@@ -95,7 +95,7 @@ unsigned int hexValue(unsigned char value) {
   return std::numeric_limits<unsigned int>::max();
 }
 
-void appendUtf8(std::string* output, unsigned int code_point) {
+void appendUtf8(std::string *output, unsigned int code_point) {
   if (code_point <= 0x7fU) {
     output->push_back(static_cast<char>(code_point));
   } else if (code_point <= 0x7ffU) {
@@ -103,22 +103,19 @@ void appendUtf8(std::string* output, unsigned int code_point) {
     output->push_back(static_cast<char>(0x80U | (code_point & 0x3fU)));
   } else {
     output->push_back(static_cast<char>(0xe0U | (code_point >> 12U)));
-    output->push_back(
-        static_cast<char>(0x80U | ((code_point >> 6U) & 0x3fU)));
+    output->push_back(static_cast<char>(0x80U | ((code_point >> 6U) & 0x3fU)));
     output->push_back(static_cast<char>(0x80U | (code_point & 0x3fU)));
   }
 }
 
-unsigned int utf8CodePoint(const std::string& input,
-                           std::size_t position,
+unsigned int utf8CodePoint(const std::string &input, std::size_t position,
                            std::size_t length) {
   const auto first = static_cast<unsigned char>(input[position]);
   if (length == 1U) {
     return first;
   }
-  unsigned int result = first & (length == 2U ? 0x1fU
-                                 : length == 3U ? 0x0fU
-                                                : 0x07U);
+  unsigned int result =
+      first & (length == 2U ? 0x1fU : length == 3U ? 0x0fU : 0x07U);
   for (std::size_t index = 1U; index < length; ++index) {
     result = (result << 6U) |
              (static_cast<unsigned char>(input[position + index]) & 0x3fU);
@@ -136,8 +133,8 @@ bool goTrimSpaceCodePoint(unsigned int value) {
 }
 
 class CanonicalJsonCursor {
- public:
-  explicit CanonicalJsonCursor(const std::string& bytes) : bytes_(bytes) {}
+public:
+  explicit CanonicalJsonCursor(const std::string &bytes) : bytes_(bytes) {}
 
   void literal(std::string_view expected) {
     if (bytes_.compare(position_, expected.size(), expected) != 0) {
@@ -150,8 +147,7 @@ class CanonicalJsonCursor {
     literal("\"");
     std::string decoded;
     while (position_ < bytes_.size()) {
-      const auto character =
-          static_cast<unsigned char>(bytes_[position_]);
+      const auto character = static_cast<unsigned char>(bytes_[position_]);
       if (character == '"') {
         ++position_;
         return decoded;
@@ -173,8 +169,7 @@ class CanonicalJsonCursor {
           static_cast<unsigned char>(bytes_[position_ + 1U]) == 0x80U &&
           (static_cast<unsigned char>(bytes_[position_ + 2U]) == 0xa8U ||
            static_cast<unsigned char>(bytes_[position_ + 2U]) == 0xa9U)) {
-        throw EpochFenceError(
-            "epoch-state.json must escape U+2028 and U+2029");
+        throw EpochFenceError("epoch-state.json must escape U+2028 and U+2029");
       }
       decoded.append(bytes_, position_, length);
       position_ += length;
@@ -184,40 +179,40 @@ class CanonicalJsonCursor {
 
   bool finished() const { return position_ == bytes_.size(); }
 
- private:
-  void parseEscape(std::string* decoded) {
+private:
+  void parseEscape(std::string *decoded) {
     ++position_;
     if (position_ >= bytes_.size()) {
       throw EpochFenceError("epoch-state.json ends in an escape");
     }
     const char escape = bytes_[position_++];
     switch (escape) {
-      case '"':
-        decoded->push_back('"');
-        return;
-      case '\\':
-        decoded->push_back('\\');
-        return;
-      case 'b':
-        decoded->push_back('\b');
-        return;
-      case 'f':
-        decoded->push_back('\f');
-        return;
-      case 'n':
-        decoded->push_back('\n');
-        return;
-      case 'r':
-        decoded->push_back('\r');
-        return;
-      case 't':
-        decoded->push_back('\t');
-        return;
-      case 'u':
-        break;
-      default:
-        throw EpochFenceError(
-            "epoch-state.json contains a noncanonical JSON escape");
+    case '"':
+      decoded->push_back('"');
+      return;
+    case '\\':
+      decoded->push_back('\\');
+      return;
+    case 'b':
+      decoded->push_back('\b');
+      return;
+    case 'f':
+      decoded->push_back('\f');
+      return;
+    case 'n':
+      decoded->push_back('\n');
+      return;
+    case 'r':
+      decoded->push_back('\r');
+      return;
+    case 't':
+      decoded->push_back('\t');
+      return;
+    case 'u':
+      break;
+    default:
+      throw EpochFenceError(
+          "epoch-state.json contains a noncanonical JSON escape");
     }
     if (position_ + 4U > bytes_.size()) {
       throw EpochFenceError("epoch-state.json has a truncated unicode escape");
@@ -234,13 +229,13 @@ class CanonicalJsonCursor {
     }
     const std::string spelling = bytes_.substr(position_, 4U);
     position_ += 4U;
-    const bool html_escape = spelling == "003c" || spelling == "003e" ||
-                             spelling == "0026";
+    const bool html_escape =
+        spelling == "003c" || spelling == "003e" || spelling == "0026";
     const bool separator_escape = spelling == "2028" || spelling == "2029";
-    const bool control_escape =
-        code_point < 0x20U && code_point != 0x08U && code_point != 0x09U &&
-        code_point != 0x0aU && code_point != 0x0cU && code_point != 0x0dU &&
-        spelling[0] == '0' && spelling[1] == '0';
+    const bool control_escape = code_point < 0x20U && code_point != 0x08U &&
+                                code_point != 0x09U && code_point != 0x0aU &&
+                                code_point != 0x0cU && code_point != 0x0dU &&
+                                spelling[0] == '0' && spelling[1] == '0';
     if (!html_escape && !separator_escape && !control_escape) {
       throw EpochFenceError(
           "epoch-state.json unicode escape is not canonical Go JSON");
@@ -248,11 +243,11 @@ class CanonicalJsonCursor {
     appendUtf8(decoded, code_point);
   }
 
-  const std::string& bytes_;
+  const std::string &bytes_;
   std::size_t position_{0U};
 };
 
-bool canonicalIdentity(const std::string& value, std::size_t maximum) {
+bool canonicalIdentity(const std::string &value, std::size_t maximum) {
   if (value.empty() || value.size() > maximum ||
       value.find('\0') != std::string::npos) {
     return false;
@@ -275,7 +270,7 @@ bool canonicalIdentity(const std::string& value, std::size_t maximum) {
   return !goTrimSpaceCodePoint(first) && !goTrimSpaceCodePoint(last);
 }
 
-std::string readSecureEpochState(const std::string& path) {
+std::string readSecureEpochState(const std::string &path) {
   struct stat before {};
   if (::lstat(path.c_str(), &before) != 0) {
     throw EpochFenceError("cannot lstat epoch fence: " +
@@ -315,17 +310,17 @@ std::string readSecureEpochState(const std::string& path) {
     offset += static_cast<std::size_t>(count);
   }
   struct stat current {};
-  if (::lstat(path.c_str(), &current) != 0 ||
-      current.st_dev != opened.st_dev || current.st_ino != opened.st_ino ||
-      current.st_size != opened.st_size || (current.st_mode & 07777) != 0600) {
+  if (::lstat(path.c_str(), &current) != 0 || current.st_dev != opened.st_dev ||
+      current.st_ino != opened.st_ino || current.st_size != opened.st_size ||
+      (current.st_mode & 07777) != 0600) {
     throw EpochFenceError("epoch fence was atomically replaced during read");
   }
   return bytes;
 }
 
-}  // namespace
+} // namespace
 
-std::string epochStatePathForPolicy(const std::string& policy_file) {
+std::string epochStatePathForPolicy(const std::string &policy_file) {
   if (policy_file.empty() || policy_file.front() != '/') {
     throw EpochFenceError("policy file must be an absolute trusted path");
   }
@@ -337,15 +332,15 @@ std::string epochStatePathForPolicy(const std::string& policy_file) {
   return policy_file.substr(0U, separator + 1U) + kEpochStateFileName;
 }
 
-std::string epochLockPathForPolicy(const std::string& policy_file) {
+std::string epochLockPathForPolicy(const std::string &policy_file) {
   // Reuse the policy path validation and replace only the fixed sibling name.
   const std::string state_path = epochStatePathForPolicy(policy_file);
   return state_path.substr(0U, state_path.size() -
-                                  std::strlen(kEpochStateFileName)) +
+                                   std::strlen(kEpochStateFileName)) +
          kEpochLockFileName;
 }
 
-EpochFenceLease::EpochFenceLease(const std::string& policy_file)
+EpochFenceLease::EpochFenceLease(const std::string &policy_file)
     : path_(epochLockPathForPolicy(policy_file)) {
   struct stat before {};
   if (::lstat(path_.c_str(), &before) != 0) {
@@ -354,8 +349,8 @@ EpochFenceLease::EpochFenceLease(const std::string& policy_file)
   }
   if (!S_ISREG(before.st_mode) || S_ISLNK(before.st_mode) ||
       (before.st_mode & 07777) != 0600 || before.st_size != 0) {
-    throw EpochFenceError(
-        "epoch fence lock must be an empty regular non-symlink file with exact mode 0600");
+    throw EpochFenceError("epoch fence lock must be an empty regular "
+                          "non-symlink file with exact mode 0600");
   }
 
   descriptor_ = ::open(path_.c_str(), O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
@@ -372,8 +367,8 @@ EpochFenceLease::EpochFenceLease(const std::string& policy_file)
       throw EpochFenceError("epoch fence lock changed during secure open");
     }
     if (::flock(descriptor_, LOCK_SH | LOCK_NB) != 0) {
-      throw EpochFenceError(
-          "Core epoch allocation currently owns the exclusive epoch fence lock");
+      throw EpochFenceError("Core epoch allocation currently owns the "
+                            "exclusive epoch fence lock");
     }
     validateCurrent();
   } catch (...) {
@@ -407,7 +402,7 @@ void EpochFenceLease::validateCurrent() const {
   }
 }
 
-EpochFenceState parseCanonicalEpochState(const std::string& bytes) {
+EpochFenceState parseCanonicalEpochState(const std::string &bytes) {
   if (bytes.empty() || bytes.size() > kMaximumEpochStateBytes ||
       bytes.back() != '\n') {
     throw EpochFenceError(
@@ -435,7 +430,7 @@ EpochFenceState parseCanonicalEpochState(const std::string& bytes) {
   }
   try {
     state.epoch = parseEpochId(epoch_text);
-  } catch (const std::exception& error) {
+  } catch (const std::exception &error) {
     throw EpochFenceError(std::string("epoch-state.json epochId: ") +
                           error.what());
   }
@@ -450,10 +445,11 @@ EpochFenceState parseCanonicalEpochState(const std::string& bytes) {
   return state;
 }
 
-void validateEpochFenceState(const EpochFenceState& state,
-                             const FrozenConfig& config,
+void validateEpochFenceState(const EpochFenceState &state,
+                             const FrozenConfig &config,
                              std::uint64_t expected_epoch) {
-  if (state.epoch != expected_epoch || state.policy_sha256 != config.policy_sha256 ||
+  if (state.epoch != expected_epoch ||
+      state.policy_sha256 != config.policy_sha256 ||
       state.session_contract_sha256 != config.session_contract_sha256 ||
       state.session_id != config.session_id) {
     throw EpochFenceError(
@@ -461,13 +457,13 @@ void validateEpochFenceState(const EpochFenceState& state,
   }
 }
 
-EpochFenceState loadAndValidateEpochFence(const std::string& policy_file,
-                                         const FrozenConfig& config,
-                                         std::uint64_t expected_epoch) {
+EpochFenceState loadAndValidateEpochFence(const std::string &policy_file,
+                                          const FrozenConfig &config,
+                                          std::uint64_t expected_epoch) {
   const EpochFenceState state = parseCanonicalEpochState(
       readSecureEpochState(epochStatePathForPolicy(policy_file)));
   validateEpochFenceState(state, config, expected_epoch);
   return state;
 }
 
-}  // namespace xgc_session_clock_guard
+} // namespace xgc_session_clock_guard

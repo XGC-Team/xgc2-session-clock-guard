@@ -195,25 +195,25 @@ struct GuardEvent {
   std::string reason;
 };
 
-const char* toString(GuardState state);
-const char* toString(SourceDomain domain);
-const char* toString(StreamKind stream);
-const char* toString(SessionTimeAuthority authority);
-const char* toString(ClockMapping mapping);
-const char* toString(GuardEventKind kind);
-SourceDomain parseSourceDomain(const std::string& text);
-SessionTimeAuthority parseSessionTimeAuthority(const std::string& text);
-ClockMapping parseClockMapping(const std::string& text);
-std::uint64_t parseEpochId(const std::string& text);
-std::uint64_t parseRosPrivateEpochId(const std::string& text);
+const char *toString(GuardState state);
+const char *toString(SourceDomain domain);
+const char *toString(StreamKind stream);
+const char *toString(SessionTimeAuthority authority);
+const char *toString(ClockMapping mapping);
+const char *toString(GuardEventKind kind);
+SourceDomain parseSourceDomain(const std::string &text);
+SessionTimeAuthority parseSessionTimeAuthority(const std::string &text);
+ClockMapping parseClockMapping(const std::string &text);
+std::uint64_t parseEpochId(const std::string &text);
+std::uint64_t parseRosPrivateEpochId(const std::string &text);
 
 std::string rawRoot(SourceDomain domain);
-std::string rawPoseTopic(const Route& route);
-std::string rawTwistTopic(const Route& route);
-std::string canonicalPoseTopic(const Route& route);
-std::string canonicalTwistTopic(const Route& route);
-std::string envelopeTopic(const Route& route);
-std::string statusTopic(const Route& route);
-std::string gazeboClockTopic(const FrozenConfig& config);
+std::string rawPoseTopic(const Route &route);
+std::string rawTwistTopic(const Route &route);
+std::string canonicalPoseTopic(const Route &route);
+std::string canonicalTwistTopic(const Route &route);
+std::string envelopeTopic(const Route &route);
+std::string statusTopic(const Route &route);
+std::string gazeboClockTopic(const FrozenConfig &config);
 
-}  // namespace xgc_session_clock_guard
+} // namespace xgc_session_clock_guard

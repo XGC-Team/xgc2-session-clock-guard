@@ -12,18 +12,16 @@
 namespace xgc_session_clock_guard {
 
 class SessionClockGuard {
- public:
-  SessionClockGuard(FrozenConfig config,
-                    std::uint64_t epoch,
+public:
+  SessionClockGuard(FrozenConfig config, std::uint64_t epoch,
                     std::uint64_t monotonic_start_stamp_ns,
                     std::uint64_t system_wall_start_stamp_ns);
 
-  bool observeGazeboClock(const GazeboClockObservation& observation,
-                          std::string* reason);
-  TimestampEnvelope observe(const Observation& observation);
-  void poll(std::uint64_t monotonic_now_ns,
-            std::uint64_t system_wall_now_ns);
-  RouteStatus routeStatus(const std::string& slot) const;
+  bool observeGazeboClock(const GazeboClockObservation &observation,
+                          std::string *reason);
+  TimestampEnvelope observe(const Observation &observation);
+  void poll(std::uint64_t monotonic_now_ns, std::uint64_t system_wall_now_ns);
+  RouteStatus routeStatus(const std::string &slot) const;
   std::vector<RouteStatus> routeStatuses() const;
   AuthorityStatus authorityStatus() const { return authority_status_; }
   GuardState aggregateState() const;
@@ -32,12 +30,12 @@ class SessionClockGuard {
   std::uint64_t epoch() const { return epoch_; }
   std::uint64_t sessionNow(std::uint64_t monotonic_now_ns) const;
   std::vector<GuardEvent> takeEvents();
-  void failEpochFence(const std::string& reason,
+  void failEpochFence(const std::string &reason,
                       std::uint64_t monotonic_stamp_ns);
-  const FrozenConfig& config() const { return config_; }
-  const Route& route(const std::string& slot) const;
+  const FrozenConfig &config() const { return config_; }
+  const Route &route(const std::string &slot) const;
 
- private:
+private:
   struct Entry {
     Route route;
     std::unique_ptr<ClockMapper> mapper;
@@ -45,22 +43,18 @@ class SessionClockGuard {
 
   bool validateStationClock(std::uint64_t monotonic_now_ns,
                             std::uint64_t system_wall_now_ns,
-                            std::string* reason);
+                            std::string *reason);
   bool validateGazeboAuthorityAge(std::uint64_t monotonic_now_ns,
-                                  std::string* reason,
-                                  bool* immediate_loss);
-  void failAuthority(const std::string& reason, bool immediate_loss);
-  void recordHealthyAuthority(const std::string& reason);
+                                  std::string *reason, bool *immediate_loss);
+  void failAuthority(const std::string &reason, bool immediate_loss);
+  void recordHealthyAuthority(const std::string &reason);
   void refreshAuthorityHealth();
-  void emitStateTransition(GuardState before,
-                           const std::string& reason,
+  void emitStateTransition(GuardState before, const std::string &reason,
                            std::uint64_t monotonic_stamp_ns);
-  void emitEvent(GuardEventKind kind,
-                 GuardState state,
-                 const std::string& reason,
-                 std::uint64_t monotonic_stamp_ns);
-  TimestampEnvelope rejectForAuthority(const Observation& observation,
-                                       const std::string& reason);
+  void emitEvent(GuardEventKind kind, GuardState state,
+                 const std::string &reason, std::uint64_t monotonic_stamp_ns);
+  TimestampEnvelope rejectForAuthority(const Observation &observation,
+                                       const std::string &reason);
 
   FrozenConfig config_;
   std::map<std::string, Entry> entries_;
@@ -82,4 +76,4 @@ class SessionClockGuard {
   std::vector<GuardEvent> pending_events_;
 };
 
-}  // namespace xgc_session_clock_guard
+} // namespace xgc_session_clock_guard

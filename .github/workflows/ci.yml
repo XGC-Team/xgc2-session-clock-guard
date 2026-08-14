@@ -1,0 +1,121 @@
+name: ci
+
+on:
+  push:
+    branches: [noetic]
+  pull_request:
+    branches: [noetic]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: xgc2-session-clock-guard-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  compliance:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 2
+      - name: Install compliance dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ripgrep shellcheck python3-yaml
+      - name: Run repository and package compliance
+        run: |
+          set -euo pipefail
+          git diff --check HEAD^ HEAD
+          .xgc2/scripts/check_package_compliance.sh
+
+  cpp-quality:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Run C++ quality in Focal/Noetic
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/workspace/source:ro" \
+            ros:noetic-ros-base-focal bash -lc '
+              set -euo pipefail
+              apt-get update
+              apt-get install -y --no-install-recommends build-essential clang-format-10 python3
+              /workspace/source/.xgc2/scripts/check_cpp_quality.sh
+            '
+
+  source-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Run ROS-free source and static contract tests
+        run: |
+          set -euo pipefail
+          tests/run_core_tests.sh
+          tests/static_contract_test.sh
+
+  build:
+    name: package-tests-debs-${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Build, test, package, install, and inspect
+        env:
+          EXPECTED_ARCH: ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+          install -d .ci/build-manifests
+          .xgc2/scripts/build_debs_in_docker.sh \
+            --work-dir "$RUNNER_TEMP/xgc2-session-clock-guard-${{ matrix.arch }}" \
+            --output-dir "$GITHUB_WORKSPACE/debs"
+      - name: Create and verify trusted build manifest
+        run: |
+          set -euo pipefail
+          product_version="$(awk -F': *' '/^version:/ {print $2; exit}' .xgc2/product.yml)"
+          python3 .xgc2/scripts/xgc2_artifact_manifest.py build \
+            --deb-dir debs \
+            --output-dir .ci/build-manifests \
+            --product xgc2-session-clock-guard \
+            --expected-package ros-noetic-xgc2-session-clock-guard \
+            --product-version "$product_version" \
+            --distribution focal \
+            --architecture "${{ matrix.arch }}" \
+            --source-sha "$GITHUB_SHA" \
+            --ci-run-id "$GITHUB_RUN_ID" \
+            --ci-workflow "$GITHUB_WORKFLOW" \
+            --ci-workflow-ref "$GITHUB_WORKFLOW_REF"
+          python3 .xgc2/scripts/xgc2_artifact_manifest.py verify-build \
+            --artifact-dir . \
+            --deb-output-dir .ci/verified-debs \
+            --manifest-output-dir .ci/verified-manifests \
+            --product xgc2-session-clock-guard \
+            --expected-package ros-noetic-xgc2-session-clock-guard \
+            --product-version "$product_version" \
+            --distribution focal \
+            --architecture "${{ matrix.arch }}" \
+            --source-sha "$GITHUB_SHA" \
+            --ci-run-id "$GITHUB_RUN_ID"
+      - name: Upload trusted build output
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: xgc2-session-clock-guard-focal-${{ matrix.arch }}
+          path: |
+            debs/*.deb
+            .ci/build-manifests/*.json
+          retention-days: 14
+          include-hidden-files: true

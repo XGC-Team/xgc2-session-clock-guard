@@ -16,8 +16,8 @@
 #include <xgc_session_clock_guard/ClockGuardStatus.h>
 #include <xgc_session_clock_guard/ClockTimestampEnvelope.h>
 
-#include "xgc_session_clock_guard/frozen_config.hpp"
 #include "xgc_session_clock_guard/epoch_fence.hpp"
+#include "xgc_session_clock_guard/frozen_config.hpp"
 #include "xgc_session_clock_guard/session_clock_guard.hpp"
 
 namespace xgc_session_clock_guard {
@@ -28,7 +28,8 @@ std::uint64_t systemWallNowNs() {
   const auto nanoseconds =
       std::chrono::duration_cast<std::chrono::nanoseconds>(now).count();
   if (nanoseconds <= 0) {
-    throw std::runtime_error("system wall clock returned a non-positive timestamp");
+    throw std::runtime_error(
+        "system wall clock returned a non-positive timestamp");
   }
   return static_cast<std::uint64_t>(nanoseconds);
 }
@@ -50,8 +51,8 @@ ros::Time rosTimeFromNs(std::uint64_t value) {
 }
 
 template <typename Value>
-Value requiredParam(const ros::NodeHandle& private_node,
-                    const std::string& name) {
+Value requiredParam(const ros::NodeHandle &private_node,
+                    const std::string &name) {
   Value value;
   if (!private_node.getParam(name, value)) {
     throw std::runtime_error("required private parameter is missing: ~" + name);
@@ -59,10 +60,10 @@ Value requiredParam(const ros::NodeHandle& private_node,
   return value;
 }
 
-}  // namespace
+} // namespace
 
 class SessionClockGuardNode {
- public:
+public:
   SessionClockGuardNode() : node_(), private_node_("~") {
     policy_file_ = requiredParam<std::string>(private_node_, "policy_file");
     const std::string policy_sha256 =
@@ -72,8 +73,7 @@ class SessionClockGuardNode {
 
     config_ = FrozenConfigLoader::loadFile(policy_file_, policy_sha256);
     expected_epoch_ = parseRosPrivateEpochId(epoch_text);
-    epoch_fence_lease_ =
-        std::make_unique<EpochFenceLease>(policy_file_);
+    epoch_fence_lease_ = std::make_unique<EpochFenceLease>(policy_file_);
     loadAndValidateEpochFence(policy_file_, config_, expected_epoch_);
     guard_ = std::make_unique<SessionClockGuard>(
         config_, expected_epoch_, steadyNowNs(), systemWallNowNs());
@@ -84,32 +84,28 @@ class SessionClockGuardNode {
         "/xgc/session/clock/status", queue_depth, true);
     event_publisher_ = node_.advertise<ClockGuardEvent>(
         "/xgc/session/clock/events", queue_depth, false);
-    for (const auto& route : config_.routes) {
+    for (const auto &route : config_.routes) {
       pose_publishers_.emplace(
-          route.slot,
-          node_.advertise<geometry_msgs::PoseStamped>(
-              canonicalPoseTopic(route), queue_depth, false));
+          route.slot, node_.advertise<geometry_msgs::PoseStamped>(
+                          canonicalPoseTopic(route), queue_depth, false));
       twist_publishers_.emplace(
-          route.slot,
-          node_.advertise<geometry_msgs::TwistStamped>(
-              canonicalTwistTopic(route), queue_depth, false));
+          route.slot, node_.advertise<geometry_msgs::TwistStamped>(
+                          canonicalTwistTopic(route), queue_depth, false));
       envelope_publishers_.emplace(
-          route.slot,
-          node_.advertise<ClockTimestampEnvelope>(
-              envelopeTopic(route), queue_depth, false));
+          route.slot, node_.advertise<ClockTimestampEnvelope>(
+                          envelopeTopic(route), queue_depth, false));
       status_publishers_.emplace(
-          route.slot,
-          node_.advertise<ClockGuardStatus>(statusTopic(route), queue_depth,
-                                            true));
+          route.slot, node_.advertise<ClockGuardStatus>(statusTopic(route),
+                                                        queue_depth, true));
 
       pose_subscribers_.push_back(node_.subscribe<geometry_msgs::PoseStamped>(
           rawPoseTopic(route), queue_depth,
-          [this, route](const geometry_msgs::PoseStamped::ConstPtr& message) {
+          [this, route](const geometry_msgs::PoseStamped::ConstPtr &message) {
             handlePose(route, message);
           }));
       twist_subscribers_.push_back(node_.subscribe<geometry_msgs::TwistStamped>(
           rawTwistTopic(route), queue_depth,
-          [this, route](const geometry_msgs::TwistStamped::ConstPtr& message) {
+          [this, route](const geometry_msgs::TwistStamped::ConstPtr &message) {
             handleTwist(route, message);
           }));
     }
@@ -117,20 +113,21 @@ class SessionClockGuardNode {
     const std::string clock_topic = gazeboClockTopic(config_);
     if (!clock_topic.empty()) {
       gazebo_clock_subscriber_ = node_.subscribe<rosgraph_msgs::Clock>(
-          clock_topic, queue_depth,
-          &SessionClockGuardNode::handleGazeboClock, this);
+          clock_topic, queue_depth, &SessionClockGuardNode::handleGazeboClock,
+          this);
       ROS_WARN_STREAM(
           "Gazebo clock publisher identity/uniqueness admission for "
           << clock_topic
-          << " is a Core workflow responsibility; this node enforces positive, monotonic, freshness, skew, and mode-specific RTF gates");
+          << " is a Core workflow responsibility; this node enforces positive, "
+             "monotonic, freshness, skew, and mode-specific RTF gates");
     }
 
     const double poll_period_seconds =
         static_cast<double>(config_.thresholds.guard_poll_period_ns) /
         1000000000.0;
-    guard_poll_timer_ = node_.createWallTimer(
-        ros::WallDuration(poll_period_seconds),
-        &SessionClockGuardNode::pollGuard, this);
+    guard_poll_timer_ =
+        node_.createWallTimer(ros::WallDuration(poll_period_seconds),
+                              &SessionClockGuardNode::pollGuard, this);
 
     publishAllStatuses();
     ROS_INFO_STREAM("session clock guard initialized for Session "
@@ -143,7 +140,7 @@ class SessionClockGuardNode {
                     << " policy_sha256=" << config_.policy_sha256);
   }
 
- private:
+private:
   bool ensureEpochFence() {
     if (epoch_fence_failed_) {
       return false;
@@ -152,13 +149,14 @@ class SessionClockGuardNode {
       epoch_fence_lease_->validateCurrent();
       loadAndValidateEpochFence(policy_file_, config_, expected_epoch_);
       return true;
-    } catch (const std::exception& error) {
+    } catch (const std::exception &error) {
       epoch_fence_failed_ = true;
       const std::string reason =
           std::string("immutable Core epoch fence failed: ") + error.what();
       guard_->failEpochFence(reason, steadyNowNs());
       publishAllStatuses();
-      ROS_FATAL_STREAM(reason << "; canonical output is closed and the process will exit");
+      ROS_FATAL_STREAM(
+          reason << "; canonical output is closed and the process will exit");
       ros::shutdown();
       return false;
     }
@@ -168,8 +166,7 @@ class SessionClockGuardNode {
     return rosTimeFromNs(guard_->sessionNow(steadyNowNs()));
   }
 
-  Observation makeObservation(const Route& route,
-                              StreamKind stream,
+  Observation makeObservation(const Route &route, StreamKind stream,
                               std::uint64_t raw_stamp_ns) const {
     Observation observation;
     observation.slot = route.slot;
@@ -183,7 +180,7 @@ class SessionClockGuardNode {
     return observation;
   }
 
-  void handleGazeboClock(const rosgraph_msgs::Clock::ConstPtr& message) {
+  void handleGazeboClock(const rosgraph_msgs::Clock::ConstPtr &message) {
     if (!ensureEpochFence()) {
       return;
     }
@@ -196,14 +193,13 @@ class SessionClockGuardNode {
     publishAllStatuses();
   }
 
-  void handlePose(const Route& route,
-                  const geometry_msgs::PoseStamped::ConstPtr& message) {
+  void handlePose(const Route &route,
+                  const geometry_msgs::PoseStamped::ConstPtr &message) {
     if (!ensureEpochFence()) {
       return;
     }
-    const auto result = guard_->observe(
-        makeObservation(route, StreamKind::Pose,
-                        message->header.stamp.toNSec()));
+    const auto result = guard_->observe(makeObservation(
+        route, StreamKind::Pose, message->header.stamp.toNSec()));
     bool published = false;
     if (result.canonical_publish_allowed) {
       // Re-read the persisted Core epoch fence after mapping and immediately
@@ -221,14 +217,13 @@ class SessionClockGuardNode {
     publishResult(result, published);
   }
 
-  void handleTwist(const Route& route,
-                   const geometry_msgs::TwistStamped::ConstPtr& message) {
+  void handleTwist(const Route &route,
+                   const geometry_msgs::TwistStamped::ConstPtr &message) {
     if (!ensureEpochFence()) {
       return;
     }
-    const auto result = guard_->observe(
-        makeObservation(route, StreamKind::Twist,
-                        message->header.stamp.toNSec()));
+    const auto result = guard_->observe(makeObservation(
+        route, StreamKind::Twist, message->header.stamp.toNSec()));
     bool published = false;
     if (result.canonical_publish_allowed) {
       if (!ensureEpochFence()) {
@@ -242,7 +237,7 @@ class SessionClockGuardNode {
     publishResult(result, published);
   }
 
-  void publishResult(const TimestampEnvelope& result,
+  void publishResult(const TimestampEnvelope &result,
                      bool canonical_published) {
     ClockTimestampEnvelope message;
     message.header.stamp = sessionHeaderStamp();
@@ -250,8 +245,7 @@ class SessionClockGuardNode {
     message.session_contract_sha256 = config_.session_contract_sha256;
     message.policy_sha256 = config_.policy_sha256;
     message.run_mode = config_.run_mode;
-    message.session_time_authority =
-        toString(config_.session_time_authority);
+    message.session_time_authority = toString(config_.session_time_authority);
     message.clock_mapping = toString(config_.clock_mapping);
     message.slot = result.slot;
     message.source_body = result.source_body;
@@ -262,8 +256,7 @@ class SessionClockGuardNode {
     message.raw_source_stamp = rosTimeFromNs(result.raw_source_stamp_ns);
     message.mapped_session_stamp =
         rosTimeFromNs(result.mapped_session_stamp_ns);
-    message.receive_monotonic_stamp_ns =
-        result.receive_monotonic_stamp_ns;
+    message.receive_monotonic_stamp_ns = result.receive_monotonic_stamp_ns;
     message.authority_age_ns = result.authority_age_ns;
     message.gazebo_clock_skew_ns = result.gazebo_clock_skew_ns;
     message.offset_ns = result.offset_ns;
@@ -280,7 +273,7 @@ class SessionClockGuardNode {
     publishEvents();
   }
 
-  void publishStatus(const std::string& slot) {
+  void publishStatus(const std::string &slot) {
     const auto status = guard_->routeStatus(slot);
     ClockGuardStatus message;
     message.header.stamp = sessionHeaderStamp();
@@ -288,8 +281,7 @@ class SessionClockGuardNode {
     message.session_contract_sha256 = config_.session_contract_sha256;
     message.policy_sha256 = config_.policy_sha256;
     message.run_mode = config_.run_mode;
-    message.session_time_authority =
-        toString(config_.session_time_authority);
+    message.session_time_authority = toString(config_.session_time_authority);
     message.clock_mapping = toString(config_.clock_mapping);
     message.slot = status.slot;
     message.source_body = status.source_body;
@@ -339,18 +331,14 @@ class SessionClockGuardNode {
     message.last_authority_monotonic_stamp_ns =
         authority.last_authority_monotonic_stamp_ns;
     message.authority_age_ns = authority.authority_age_ns;
-    message.last_gazebo_clock_stamp_ns =
-        authority.last_gazebo_clock_stamp_ns;
-    message.last_gazebo_clock_skew_ns =
-        authority.last_gazebo_clock_skew_ns;
+    message.last_gazebo_clock_stamp_ns = authority.last_gazebo_clock_stamp_ns;
+    message.last_gazebo_clock_skew_ns = authority.last_gazebo_clock_skew_ns;
     message.station_wall_error_ns = authority.station_wall_error_ns;
     message.station_wall_step_ns = authority.station_wall_step_ns;
     message.gazebo_real_time_factor = authority.gazebo_real_time_factor;
-    message.authority_consecutive_failures =
-        authority.consecutive_failures;
+    message.authority_consecutive_failures = authority.consecutive_failures;
     message.authority_recovery_samples = authority.recovery_samples;
-    message.required_routes =
-        static_cast<std::uint32_t>(config_.routes.size());
+    message.required_routes = static_cast<std::uint32_t>(config_.routes.size());
     message.locked_routes =
         static_cast<std::uint32_t>(guard_->lockedRouteCount());
     message.vrpn_wire_resolution_ns = config_.vrpn_wire_resolution_ns;
@@ -362,15 +350,14 @@ class SessionClockGuardNode {
   }
 
   void publishEvents() {
-    for (const auto& event : guard_->takeEvents()) {
+    for (const auto &event : guard_->takeEvents()) {
       ClockGuardEvent message;
       message.header.stamp = rosTimeFromNs(event.session_stamp_ns);
       message.session_id = config_.session_id;
       message.session_contract_sha256 = config_.session_contract_sha256;
       message.policy_sha256 = config_.policy_sha256;
       message.run_mode = config_.run_mode;
-      message.session_time_authority =
-          toString(config_.session_time_authority);
+      message.session_time_authority = toString(config_.session_time_authority);
       message.clock_mapping = toString(config_.clock_mapping);
       message.sequence = event.sequence;
       message.event = static_cast<std::uint8_t>(event.kind);
@@ -379,8 +366,7 @@ class SessionClockGuardNode {
       message.monotonic_stamp_ns = event.monotonic_stamp_ns;
       message.session_stamp_ns = event.session_stamp_ns;
       message.authority_age_ns = event.authority_age_ns;
-      message.last_gazebo_clock_stamp_ns =
-          event.last_gazebo_clock_stamp_ns;
+      message.last_gazebo_clock_stamp_ns = event.last_gazebo_clock_stamp_ns;
       message.gazebo_clock_skew_ns = event.gazebo_clock_skew_ns;
       message.station_wall_error_ns = event.station_wall_error_ns;
       message.station_wall_step_ns = event.station_wall_step_ns;
@@ -391,14 +377,14 @@ class SessionClockGuardNode {
   }
 
   void publishAllStatuses() {
-    for (const auto& route : config_.routes) {
+    for (const auto &route : config_.routes) {
       publishStatus(route.slot);
     }
     publishAggregate();
     publishEvents();
   }
 
-  void pollGuard(const ros::WallTimerEvent&) {
+  void pollGuard(const ros::WallTimerEvent &) {
     if (!ensureEpochFence()) {
       return;
     }
@@ -427,17 +413,17 @@ class SessionClockGuardNode {
   std::uint64_t next_status_sequence_{1U};
 };
 
-}  // namespace xgc_session_clock_guard
+} // namespace xgc_session_clock_guard
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   ros::init(argc, argv, "xgc_session_clock_guard");
   try {
     xgc_session_clock_guard::SessionClockGuardNode node;
     ros::spin();
     return 0;
-  } catch (const std::exception& error) {
-    ROS_FATAL_STREAM("session clock guard startup failed closed: "
-                     << error.what());
+  } catch (const std::exception &error) {
+    ROS_FATAL_STREAM(
+        "session clock guard startup failed closed: " << error.what());
     return 2;
   }
 }

@@ -24,11 +24,11 @@
 namespace xgc_session_clock_guard {
 namespace {
 
-constexpr const char* kAggregateTopic = "/xgc/session/clock/status";
-constexpr const char* kExpectedPublisher = "/xgc_session_clock_guard";
+constexpr const char *kAggregateTopic = "/xgc/session/clock/status";
+constexpr const char *kExpectedPublisher = "/xgc_session_clock_guard";
 
-AggregateAdmissionEvidence evidenceFromStatus(
-    const ClockGuardAggregateStatus& status) {
+AggregateAdmissionEvidence
+evidenceFromStatus(const ClockGuardAggregateStatus &status) {
   AggregateAdmissionEvidence evidence;
   evidence.session_id = status.session_id;
   evidence.session_contract_sha256 = status.session_contract_sha256;
@@ -47,8 +47,7 @@ AggregateAdmissionEvidence evidenceFromStatus(
   evidence.gazebo_clock_topic = status.gazebo_clock_topic;
   evidence.authority_age_ns = status.authority_age_ns;
   evidence.last_gazebo_clock_stamp_ns = status.last_gazebo_clock_stamp_ns;
-  evidence.last_gazebo_clock_skew_ns =
-      status.last_gazebo_clock_skew_ns;
+  evidence.last_gazebo_clock_skew_ns = status.last_gazebo_clock_skew_ns;
   evidence.station_wall_error_ns = status.station_wall_error_ns;
   evidence.station_wall_step_ns = status.station_wall_step_ns;
   evidence.gazebo_real_time_factor = status.gazebo_real_time_factor;
@@ -60,7 +59,7 @@ AggregateAdmissionEvidence evidenceFromStatus(
   return evidence;
 }
 
-std::vector<std::string> publishersForTopic(const std::string& topic) {
+std::vector<std::string> publishersForTopic(const std::string &topic) {
   XmlRpc::XmlRpcValue request;
   XmlRpc::XmlRpcValue response;
   XmlRpc::XmlRpcValue payload;
@@ -77,9 +76,9 @@ std::vector<std::string> publishersForTopic(const std::string& topic) {
   }
 
   std::vector<std::string> result;
-  XmlRpc::XmlRpcValue& publications = payload[0];
+  XmlRpc::XmlRpcValue &publications = payload[0];
   for (int index = 0; index < publications.size(); ++index) {
-    XmlRpc::XmlRpcValue& entry = publications[index];
+    XmlRpc::XmlRpcValue &entry = publications[index];
     if (entry.getType() != XmlRpc::XmlRpcValue::TypeArray ||
         entry.size() != 2 ||
         entry[0].getType() != XmlRpc::XmlRpcValue::TypeString ||
@@ -89,10 +88,11 @@ std::vector<std::string> publishersForTopic(const std::string& topic) {
     if (static_cast<std::string>(entry[0]) != topic) {
       continue;
     }
-    XmlRpc::XmlRpcValue& nodes = entry[1];
+    XmlRpc::XmlRpcValue &nodes = entry[1];
     for (int node_index = 0; node_index < nodes.size(); ++node_index) {
       if (nodes[node_index].getType() != XmlRpc::XmlRpcValue::TypeString) {
-        throw std::runtime_error("ROS master returned malformed publisher name");
+        throw std::runtime_error(
+            "ROS master returned malformed publisher name");
       }
       result.push_back(static_cast<std::string>(nodes[node_index]));
     }
@@ -108,10 +108,10 @@ void requireUniquePublisher() {
   }
 }
 
-}  // namespace
-}  // namespace xgc_session_clock_guard
+} // namespace
+} // namespace xgc_session_clock_guard
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   if (argc != 4) {
     std::cerr << "usage: session_clock_guard_healthcheck <policy_file> "
                  "<policy_sha256> <epoch_id>\n";
@@ -125,8 +125,8 @@ int main(int argc, char** argv) {
     const auto config = xgc_session_clock_guard::FrozenConfigLoader::loadFile(
         policy_file, policy_sha256);
     xgc_session_clock_guard::EpochFenceLease epoch_fence_lease(policy_file);
-    xgc_session_clock_guard::loadAndValidateEpochFence(
-        policy_file, config, expected_epoch);
+    xgc_session_clock_guard::loadAndValidateEpochFence(policy_file, config,
+                                                       expected_epoch);
 
     ros::init(argc, argv, "xgc_session_clock_guard_healthcheck",
               ros::init_options::AnonymousName |
@@ -139,21 +139,20 @@ int main(int argc, char** argv) {
         config, expected_epoch, "/xgc_session_clock_guard");
     using StatusEvent = ros::MessageEvent<
         xgc_session_clock_guard::ClockGuardAggregateStatus const>;
-    const boost::function<void(const StatusEvent&)> status_callback =
-        [&tracker](const StatusEvent& event) {
+    const boost::function<void(const StatusEvent &)> status_callback =
+        [&tracker](const StatusEvent &event) {
           tracker.observe(
               event.getPublisherName(),
-              xgc_session_clock_guard::evidenceFromStatus(
-                  *event.getMessage()));
+              xgc_session_clock_guard::evidenceFromStatus(*event.getMessage()));
         };
     ros::SubscribeOptions status_options;
-    status_options.initByFullCallbackType<const StatusEvent&>(
+    status_options.initByFullCallbackType<const StatusEvent &>(
         "/xgc/session/clock/status", 4U, status_callback);
     const auto subscriber = node.subscribe(status_options);
     (void)subscriber;
 
-    const auto deadline = std::chrono::steady_clock::now() +
-                          std::chrono::seconds(2);
+    const auto deadline =
+        std::chrono::steady_clock::now() + std::chrono::seconds(2);
     while (ros::ok() && !tracker.ready() && tracker.rejection().empty() &&
            std::chrono::steady_clock::now() < deadline) {
       ros::spinOnce();
@@ -171,10 +170,10 @@ int main(int argc, char** argv) {
 
     xgc_session_clock_guard::requireUniquePublisher();
     epoch_fence_lease.validateCurrent();
-    xgc_session_clock_guard::loadAndValidateEpochFence(
-        policy_file, config, expected_epoch);
+    xgc_session_clock_guard::loadAndValidateEpochFence(policy_file, config,
+                                                       expected_epoch);
     return 0;
-  } catch (const std::exception& error) {
+  } catch (const std::exception &error) {
     std::cerr << "Session Clock Guard health check failed closed: "
               << error.what() << '\n';
     return 2;

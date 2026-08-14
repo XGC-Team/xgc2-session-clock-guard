@@ -28,11 +28,27 @@ done
 
 if [[ -z "${INSTALL_ROOT}" || -z "${OUTPUT_DIR}" ]]; then
   echo '--install-root and --output-dir are required' >&2
-  exit 1
+  exit 2
 fi
+[[ "${INSTALL_ROOT}" == /* && "${INSTALL_ROOT}" != / ]] || {
+  echo '--install-root must be an absolute, non-root path' >&2
+  exit 2
+}
+[[ "${OUTPUT_DIR}" == /* && "${OUTPUT_DIR}" != / ]] || {
+  echo '--output-dir must be an absolute, non-root path' >&2
+  exit 2
+}
 
 VERSION="$(sed -n 's/^version:[[:space:]]*//p' "${REPO_ROOT}/.xgc2/product.yml" | head -n 1)"
 ARCHITECTURE="$(dpkg --print-architecture)"
+[[ "${VERSION}" =~ ^[0-9]+[.][0-9]+[.][0-9]+-[1-9][0-9]*$ ]] || {
+  echo "product version is not a canonical Debian revision: ${VERSION}" >&2
+  exit 1
+}
+[[ "${ARCHITECTURE}" =~ ^(amd64|arm64)$ ]] || {
+  echo "unsupported Debian architecture: ${ARCHITECTURE}" >&2
+  exit 1
+}
 PREFIX="/opt/ros/${ROS_DISTRO}"
 PACKAGE_ROOT="$(mktemp -d)"
 
@@ -43,6 +59,11 @@ trap cleanup EXIT
 
 mkdir -p "${PACKAGE_ROOT}/DEBIAN" "${PACKAGE_ROOT}/usr/share/doc/${APT_PACKAGE}" \
   "${OUTPUT_DIR}"
+if find "${OUTPUT_DIR}" -mindepth 1 -maxdepth 1 \
+  -name "${APT_PACKAGE}_*.deb" -print -quit | grep -q .; then
+  echo "output directory already contains a product Deb: ${OUTPUT_DIR}" >&2
+  exit 1
+fi
 
 copy_installed() {
   local relative="$1"
@@ -72,7 +93,7 @@ Version: ${VERSION}
 Section: misc
 Priority: optional
 Architecture: ${ARCHITECTURE}
-Maintainer: XGC2 <apt@example.com>
+Maintainer: XGC2 Release Engineering <release@xgc2.dev>
 Depends: ros-noetic-geometry-msgs, ros-noetic-message-runtime, ros-noetic-roscpp, ros-noetic-rosgraph-msgs, ros-noetic-roslaunch, ros-noetic-std-msgs
 Description: XGC2 ROS1 Session clock mapper and route guard
  Fail-closed VRPN source timestamp mapping and canonical pose/twist admission
@@ -93,7 +114,6 @@ chmod 0644 "${PACKAGE_ROOT}/DEBIAN/control" \
   "${PACKAGE_ROOT}/usr/share/xgc2/process-definitions/xgc2-session-clock-guard.json"
 test -x "${PACKAGE_ROOT}${PREFIX}/lib/${ROS_PACKAGE}/session_clock_guard_node"
 
-rm -f "${OUTPUT_DIR}/${APT_PACKAGE}_"*.deb
 fakeroot dpkg-deb --build "${PACKAGE_ROOT}" \
   "${OUTPUT_DIR}/${APT_PACKAGE}_${VERSION}_${ARCHITECTURE}.deb" >/dev/null
 find "${OUTPUT_DIR}" -maxdepth 1 -type f -name "${APT_PACKAGE}_*.deb" -print | sort
