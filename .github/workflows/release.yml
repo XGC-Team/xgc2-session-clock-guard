@@ -118,8 +118,7 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Install compliance dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends ripgrep shellcheck python3-yaml
+
       - name: Run release compliance
         run: |
           set -euo pipefail
@@ -137,10 +136,8 @@ jobs:
           set -euo pipefail
           docker run --rm \
             -v "$GITHUB_WORKSPACE:/workspace/source:ro" \
-            ros:noetic-ros-base-focal bash -lc '
+            ghcr.io/xgc-team/xgc2-images/xgc2-build-focal-ros-noetic:1.0.0 bash -lc '
               set -euo pipefail
-              apt-get update
-              apt-get install -y --no-install-recommends build-essential clang-format-10 python3
               /workspace/source/.xgc2/scripts/check_cpp_quality.sh
             '
 

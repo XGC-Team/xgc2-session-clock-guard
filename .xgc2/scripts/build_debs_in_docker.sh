@@ -5,7 +5,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-DOCKER_IMAGE="${DOCKER_IMAGE:-ros:noetic-ros-base-focal}"
+DOCKER_IMAGE="${DOCKER_IMAGE:-ghcr.io/xgc-team/xgc2-images/xgc2-build-focal-ros-noetic:1.0.0}"
 WORK_DIR="${WORK_DIR:-${REPO_ROOT}/.work/docker-noetic}"
 OUTPUT_DIR="${OUTPUT_DIR:-${REPO_ROOT}/debs}"
 EXPECTED_ARCH="${EXPECTED_ARCH:-}"
@@ -124,26 +124,7 @@ docker run --rm \
       exit 1
     }
     /workspace/source/.xgc2/scripts/configure_xgc2_apt.sh focal
-    apt-get install -y --no-install-recommends \
-      build-essential \
-      clang-format-10 \
-      dpkg-dev \
-      fakeroot \
-      python3-catkin-pkg \
-      python3-catkin-tools \
-      python3-yaml \
-      ripgrep \
-      rsync \
-      shellcheck \
-      ros-noetic-geometry-msgs \
-      ros-noetic-message-generation \
-      ros-noetic-message-runtime \
-      ros-noetic-roscpp \
-      ros-noetic-rosgraph-msgs \
-      ros-noetic-roslaunch \
-      ros-noetic-rospack \
-      ros-noetic-std-msgs
-
+    
     find /workspace/work -mindepth 1 -maxdepth 1 \
       \( -name build -o -name devel -o -name install-root -o -name src \) \
       -exec rm -rf {} +
