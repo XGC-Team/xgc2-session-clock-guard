@@ -156,7 +156,7 @@ grep -q 'ros-noetic-rosgraph-msgs' .xgc2/product.yml
 grep -q 'ros-noetic-roslaunch' .xgc2/product.yml
 grep -q '/usr/share/xgc2/process-definitions/xgc2-session-clock-guard.json' \
   .xgc2/product.yml
-grep -q 'repository: lxk36/xgc2-session-clock-guard' .xgc2/product.yml
+grep -q 'repository: XGC-Team/xgc2-session-clock-guard' .xgc2/product.yml
 grep -q 'ref: noetic' .xgc2/product.yml
 if grep -Eq \
   'standalone_product_repository_not_initialized_or_published|parent_repository_gitlink_not_registered' \

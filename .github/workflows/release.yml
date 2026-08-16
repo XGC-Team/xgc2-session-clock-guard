@@ -110,7 +110,10 @@ jobs:
       - name: Run release compliance
         run: |
           set -euo pipefail
-          git diff --check HEAD
+          git \
+            --git-dir="$GITHUB_WORKSPACE/.git" \
+            --work-tree="$GITHUB_WORKSPACE" \
+            diff --check HEAD
           .xgc2/scripts/check_package_compliance.sh
 
   build:
