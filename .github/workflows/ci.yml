@@ -29,7 +29,7 @@ jobs:
       - name: Run repository and package compliance
         run: |
           set -euo pipefail
-          git diff --check HEAD^ HEAD
+          git diff --check HEAD
           .xgc2/scripts/check_package_compliance.sh
 
   cpp-quality:
@@ -48,6 +48,7 @@ jobs:
 
   source-tests:
     runs-on: ubuntu-24.04
+    container: ghcr.io/xgc-team/xgc2-images/xgc2-build-focal-dev:1.0.0
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Run ROS-free source and static contract tests

@@ -29,8 +29,12 @@ validate_https_url "XGC2 APT key URL" "$key_url"
 
 key_file="$(mktemp /tmp/xgc2-archive-keyring.XXXXXX)"
 trap 'rm -f "$key_file"' EXIT
-apt-get update
-apt-get install -y --no-install-recommends ca-certificates curl gnupg
+for package in ca-certificates curl gnupg; do
+  if ! dpkg -s "$package" >/dev/null 2>&1; then
+    echo "image is missing $package; use the XGC2 Focal build image" >&2
+    exit 1
+  fi
+done
 curl -fsSL "$key_url" -o "$key_file"
 gpg --show-keys --with-fingerprint --with-colons "$key_file" 2>&1 \
   | grep -q '^fpr:.*:2A8E11B36F56D307ADF626D85E5FDC30979EA43F:$'

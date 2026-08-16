@@ -83,7 +83,7 @@ release = product.get("release")
 if not isinstance(release, dict):
     raise SystemExit("release metadata must be a mapping")
 release_identity = {
-    "repository": "lxk36/xgc2-session-clock-guard",
+    "repository": "XGC-Team/xgc2-session-clock-guard",
     "ref": "noetic",
     "workflow": "release.yml",
     "ci_workflow": "ci.yml",
@@ -151,8 +151,15 @@ done
 grep -Fq '.xgc2/scripts/check_cpp_quality.sh' \
   "$REPO_ROOT/.github/workflows/ci.yml"
 for input in expected_version expected_source_sha prepare_action apt_overlay_url \
-  dependency_set_digest run_cpp_quality run_source_tests; do
+  dependency_set_digest; do
   grep -Eq "^[[:space:]]+${input}:" "$REPO_ROOT/.github/workflows/release.yml"
+done
+for legacy_input in run_cpp_quality run_source_tests; do
+  if rg -n "inputs\.${legacy_input}|^[[:space:]]+${legacy_input}:" \
+    "$REPO_ROOT/.github/workflows/release.yml"; then
+    echo "legacy release input remains: ${legacy_input}" >&2
+    exit 1
+  fi
 done
 grep -Fq 'readonly FORMATTER=clang-format-10' \
   "$REPO_ROOT/.xgc2/scripts/require_clang_format_10.sh"

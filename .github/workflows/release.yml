@@ -29,16 +29,6 @@ on:
         required: false
         default: ""
         type: string
-      run_cpp_quality:
-        description: Run the dedicated C++ quality job
-        required: true
-        default: false
-        type: boolean
-      run_source_tests:
-        description: Run the dedicated source-test job
-        required: true
-        default: false
-        type: boolean
 
 permissions:
   actions: read
@@ -114,44 +104,14 @@ jobs:
   compliance:
     needs: release-guard
     runs-on: ubuntu-24.04
+    container: ghcr.io/xgc-team/xgc2-images/xgc2-build-focal-dev:1.0.0
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - name: Install compliance dependencies
-        run: |
-
       - name: Run release compliance
         run: |
           set -euo pipefail
           git diff --check HEAD
           .xgc2/scripts/check_package_compliance.sh
-
-  cpp-quality:
-    if: ${{ inputs.run_cpp_quality }}
-    needs: release-guard
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - name: Run C++ quality in Focal/Noetic
-        run: |
-          set -euo pipefail
-          docker run --rm \
-            -v "$GITHUB_WORKSPACE:/workspace/source:ro" \
-            ghcr.io/xgc-team/xgc2-images/xgc2-build-focal-ros-noetic:1.0.0 bash -lc '
-              set -euo pipefail
-              /workspace/source/.xgc2/scripts/check_cpp_quality.sh
-            '
-
-  source-tests:
-    if: ${{ inputs.run_source_tests }}
-    needs: release-guard
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - name: Run ROS-free source and static contract tests
-        run: |
-          set -euo pipefail
-          tests/run_core_tests.sh
-          tests/static_contract_test.sh
 
   build:
     name: package-tests-debs-${{ matrix.arch }}

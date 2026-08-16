@@ -49,7 +49,7 @@ ownership:
   - /opt/ros/noetic/lib/xgc_session_clock_guard/session_clock_guard_healthcheck
   - /usr/share/xgc2/process-definitions/xgc2-session-clock-guard.json
 release:
-  repository: lxk36/xgc2-session-clock-guard
+  repository: XGC-Team/xgc2-session-clock-guard
   ref: noetic
   workflow: release.yml
   ci_workflow: ci.yml

@@ -9,6 +9,7 @@ import json
 import re
 import shutil
 import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +22,7 @@ BUILD_FIELDS = {
     "source_sha",
     "distribution",
     "architecture",
+    "created_at",
     "ci",
     "debs",
 }
@@ -116,6 +118,7 @@ def create_build(args: argparse.Namespace) -> None:
         "source_sha": args.source_sha,
         "distribution": args.distribution,
         "architecture": args.architecture,
+        "created_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "ci": ci,
         "debs": [validated_deb(args, debs[0])],
     }
