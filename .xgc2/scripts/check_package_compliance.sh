@@ -65,7 +65,7 @@ expected_product = {
     "schema": "xgc2.product.v1",
     "id": "xgc2-session-clock-guard",
     "name": "XGC2 Session Clock Guard",
-    "version": "0.1.0-2",
+    "version": "0.1.0-3",
     "kind": "ros1-apt",
 }
 for key, value in expected_product.items():
@@ -87,7 +87,7 @@ release_identity = {
     "ref": "noetic",
     "workflow": "release.yml",
     "ci_workflow": "ci.yml",
-    "apt_versions": {"focal": "0.1.0-2"},
+    "apt_versions": {"focal": "0.1.0-3"},
 }
 for key, value in release_identity.items():
     if release.get(key) != value:
@@ -161,6 +161,17 @@ for legacy_input in run_cpp_quality run_source_tests; do
     exit 1
   fi
 done
+grep -Fq '/etc/apt/sources.list.d/xgc2.list' \
+  "$REPO_ROOT/.xgc2/scripts/configure_xgc2_apt.sh"
+grep -Fq '00-xgc2-release-train.list' \
+  "$REPO_ROOT/.xgc2/scripts/configure_xgc2_apt.sh"
+grep -Fq 'https://xgc2.apt.xiaokang.ink' \
+  "$REPO_ROOT/.xgc2/scripts/configure_xgc2_apt.sh"
+if rg -n 'XGC2_APT_OVERLAY_URL:-https://xgc2.apt' \
+  "$REPO_ROOT/.xgc2/scripts/configure_xgc2_apt.sh"; then
+  echo "staging overlay must not replace production APT" >&2
+  exit 1
+fi
 grep -Fq 'readonly FORMATTER=clang-format-10' \
   "$REPO_ROOT/.xgc2/scripts/require_clang_format_10.sh"
 grep -Fq 'clang-format[[:space:]]version[[:space:]]10[.]' \

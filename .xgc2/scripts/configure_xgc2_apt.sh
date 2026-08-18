@@ -21,11 +21,15 @@ distribution="${1:-focal}"
   echo "unsupported XGC2 APT distribution: $distribution" >&2
   exit 1
 }
-base_url="${XGC2_APT_OVERLAY_URL:-https://xgc2.apt.xiaokang.ink}"
-base_url="${base_url%/}"
+production_url="https://xgc2.apt.xiaokang.ink"
+overlay_url="${XGC2_APT_OVERLAY_URL:-}"
+overlay_url="${overlay_url%/}"
 key_url="${XGC2_APT_KEY_URL:-https://xgc2.apt.xiaokang.ink/xgc2-archive-keyring.gpg}"
-validate_https_url "XGC2 APT base URL" "$base_url"
+validate_https_url "XGC2 APT production URL" "$production_url"
 validate_https_url "XGC2 APT key URL" "$key_url"
+if [[ -n "$overlay_url" ]]; then
+  validate_https_url "XGC2 APT overlay URL" "$overlay_url"
+fi
 
 key_file="$(mktemp /tmp/xgc2-archive-keyring.XXXXXX)"
 trap 'rm -f "$key_file"' EXIT
@@ -40,6 +44,10 @@ gpg --show-keys --with-fingerprint --with-colons "$key_file" 2>&1 \
   | grep -q '^fpr:.*:2A8E11B36F56D307ADF626D85E5FDC30979EA43F:$'
 install -d -m 0755 /etc/apt/keyrings
 install -m 0644 "$key_file" /etc/apt/keyrings/xgc2-archive-keyring.gpg
-echo "deb [signed-by=/etc/apt/keyrings/xgc2-archive-keyring.gpg] $base_url $distribution main" \
+echo "deb [signed-by=/etc/apt/keyrings/xgc2-archive-keyring.gpg] $production_url $distribution main" \
   > /etc/apt/sources.list.d/xgc2.list
+if [[ -n "$overlay_url" ]]; then
+  echo "deb [signed-by=/etc/apt/keyrings/xgc2-archive-keyring.gpg] $overlay_url $distribution main" \
+    > /etc/apt/sources.list.d/00-xgc2-release-train.list
+fi
 apt-get update
