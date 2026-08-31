@@ -200,7 +200,7 @@
         "interval": 1000000000,
         "timeout": 5000000000,
         "successThreshold": 1,
-        "failureThreshold": 10
+        "failureThreshold": 120
       },
       "liveness": {
         "kind": "exec",

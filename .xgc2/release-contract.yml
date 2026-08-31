@@ -1,6 +1,6 @@
 schema: xgc2.release-contract.v1
 product: xgc2-session-clock-guard
-version: 0.1.0-3
+version: 0.1.0-4
 source:
   ros_distro: noetic
   ubuntu_distribution: focal
