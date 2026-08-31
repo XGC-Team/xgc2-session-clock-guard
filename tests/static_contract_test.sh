@@ -23,11 +23,11 @@ fi
 for mode in simulation physical hybrid; do
   config="config/example-${mode}-v24.cfg"
   grep -qx 'schema=xgc.session-clock-guard.config.v2' "${config}"
-  grep -qx 'policy_revision=xgc.session-clock-guard.builtin-policy.v1' "${config}"
+  grep -qx 'policy_revision=xgc.session-clock-guard.builtin-policy.v2' "${config}"
   grep -qx 'vrpn.wire_time_resolution_ns=1000' "${config}"
   grep -qx 'delay.measurement_enabled=true' "${config}"
   grep -qx 'delay.timestamp_policy=sample_time' "${config}"
-  grep -qx 'threshold.startup_lock_timeout_ns=3000000000' "${config}"
+  grep -qx 'threshold.startup_lock_timeout_ns=60000000000' "${config}"
   grep -qx 'threshold.max_authority_age_ns=100000000' "${config}"
 done
 grep -qx 'session_clock.authority=gazebo-simulation' \
@@ -87,7 +87,7 @@ grep -q 'kMaximumGuardPollPeriodNs = 250000000ULL' \
   src/core/frozen_config.cpp
 grep -q 'kMinimumStartupLockTimeoutNs = 250000000ULL' \
   src/core/frozen_config.cpp
-grep -q 'kMaximumStartupLockTimeoutNs = 3000000000ULL' \
+grep -q 'kMaximumStartupLockTimeoutNs = 120000000000ULL' \
   src/core/frozen_config.cpp
 grep -q 'policy_.max_sample_age_ns' src/core/clock_mapper.cpp
 grep -q ': policy_.startup_lock_timeout_ns' \

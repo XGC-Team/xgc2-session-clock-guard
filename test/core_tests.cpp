@@ -67,7 +67,7 @@ void replaceAll(std::string *value, const std::string &from,
 
 std::string simulationConfig() {
   return "schema=xgc.session-clock-guard.config.v2\n"
-         "policy_revision=xgc.session-clock-guard.builtin-policy.v1\n"
+         "policy_revision=xgc.session-clock-guard.builtin-policy.v2\n"
          "session_id=session-simulation-001\n"
          "session_contract_sha256="
          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n"
@@ -96,7 +96,7 @@ std::string simulationConfig() {
 
 std::string physicalConfig() {
   return "schema=xgc.session-clock-guard.config.v2\n"
-         "policy_revision=xgc.session-clock-guard.builtin-policy.v1\n"
+         "policy_revision=xgc.session-clock-guard.builtin-policy.v2\n"
          "session_id=session-physical-001\n"
          "session_contract_sha256="
          "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n"
@@ -130,7 +130,7 @@ std::string physicalConfig() {
 
 std::string hybridConfig() {
   return "schema=xgc.session-clock-guard.config.v2\n"
-         "policy_revision=xgc.session-clock-guard.builtin-policy.v1\n"
+         "policy_revision=xgc.session-clock-guard.builtin-policy.v2\n"
          "session_id=session-hybrid-001\n"
          "session_contract_sha256="
          "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\n"
@@ -376,7 +376,7 @@ void testFrozenModesRoutesAndTopics() {
 
   auto wrong_policy_revision = simulationConfig();
   replaceOnce(&wrong_policy_revision,
-              "policy_revision=xgc.session-clock-guard.builtin-policy.v1",
+              "policy_revision=xgc.session-clock-guard.builtin-policy.v2",
               "policy_revision=xgc.session-clock-guard.builtin-policy.v0");
   expectConfigError([&]() { parse(wrong_policy_revision); },
                     "unknown built-in policy revision must fail closed");
@@ -426,9 +426,9 @@ void testCanonicalParserAndEpochText() {
   auto startup_above_fixed_maximum = canonical;
   replaceOnce(&startup_above_fixed_maximum,
               "threshold.startup_lock_timeout_ns=500000000",
-              "threshold.startup_lock_timeout_ns=3000000001");
+              "threshold.startup_lock_timeout_ns=120000000001");
   expectConfigError([&]() { parse(startup_above_fixed_maximum); },
-                    "startup timeout above 3 s must fail");
+                    "startup timeout above 120 s must fail");
 
   auto startup_below_freshness = canonical;
   replaceOnce(&startup_below_freshness,

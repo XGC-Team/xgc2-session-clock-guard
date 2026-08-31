@@ -105,7 +105,7 @@ fail closed.
 The config is a canonical flat `key=value` document. Unknown, duplicated,
 missing, reordered, whitespace-padded, malformed, or mode-mismatched fields
 fail startup. `policy_revision` must be exactly the built-in
-`xgc.session-clock-guard.builtin-policy.v1`; its thresholds, IO queue depth,
+`xgc.session-clock-guard.builtin-policy.v2`; its thresholds, IO queue depth,
 and trusted per-product sampling constants are owned by the product. Session/Core
 generates `session_id`, contract digest, run mode, authority/mapping pair, and
 every route. `epoch_id` is deliberately not a config key. The product consumes
@@ -152,14 +152,16 @@ at the declared cadence; otherwise the built-in policy must receive an explicit
 revision and be repinned rather than silently changing the generated policy.
 
 The common frozen `threshold.startup_lock_timeout_ns` is separate from runtime
-freshness. It is accepted only in `[250000000, 3000000000]`, cannot be below
-either runtime age bound, and is `3000000000` in the installed examples. From
+freshness. It is accepted only in `[250000000, 120000000000]`, cannot be below
+either runtime age bound, and is `60000000000` in the installed examples. From
 the epoch anchor it bounds only the first positive Gazebo clock (when required)
 and the first pose and twist sample of every route. A missing required source
 past that timeout is a hard `lost` transition and requires a new Core-started
-process at a greater persisted epoch. As soon as an individual clock or stream
-has been seen, its existing `max_authority_age_ns` or `max_sample_age_ns` applies;
-the startup allowance never weakens runtime stale detection.
+process at a greater persisted epoch. The longer fleet-start allowance covers
+sequential Gazebo model insertion; it does not count an unseen stream as ready.
+As soon as an individual clock or stream has been seen, its existing
+`max_authority_age_ns` or `max_sample_age_ns` applies; the startup allowance
+never weakens runtime stale detection.
 
 Pure Simulation and Physical policies may contain zero Robot routes for
 camera-only intrinsic/extrinsic calibration. In that case the guard still owns

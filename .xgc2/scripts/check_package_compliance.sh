@@ -65,7 +65,7 @@ expected_product = {
     "schema": "xgc2.product.v1",
     "id": "xgc2-session-clock-guard",
     "name": "XGC2 Session Clock Guard",
-    "version": "0.1.0-5",
+    "version": "0.1.0-6",
     "kind": "ros1-apt",
 }
 for key, value in expected_product.items():
@@ -87,7 +87,7 @@ release_identity = {
     "ref": "noetic",
     "workflow": "release.yml",
     "ci_workflow": "ci.yml",
-    "apt_versions": {"focal": "0.1.0-5"},
+    "apt_versions": {"focal": "0.1.0-6"},
 }
 for key, value in release_identity.items():
     if release.get(key) != value:

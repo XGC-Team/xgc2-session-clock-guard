@@ -19,13 +19,13 @@ namespace {
 
 constexpr const char *kSchema = "xgc.session-clock-guard.config.v2";
 constexpr const char *kBuiltinPolicyRevision =
-    "xgc.session-clock-guard.builtin-policy.v1";
+    "xgc.session-clock-guard.builtin-policy.v2";
 constexpr std::size_t kMaximumCanonicalPolicyBytes = 1U << 20U;
 constexpr std::size_t kMaximumSessionIdBytes = 64U;
 constexpr std::size_t kMaximumRouteIdentityBytes = 128U;
 constexpr std::uint64_t kMaximumGuardPollPeriodNs = 250000000ULL;
 constexpr std::uint64_t kMinimumStartupLockTimeoutNs = 250000000ULL;
-constexpr std::uint64_t kMaximumStartupLockTimeoutNs = 3000000000ULL;
+constexpr std::uint64_t kMaximumStartupLockTimeoutNs = 120000000000ULL;
 
 bool asciiAlpha(unsigned char value) {
   return (value >= 'A' && value <= 'Z') || (value >= 'a' && value <= 'z');
@@ -305,8 +305,8 @@ void validateThresholdPolicy(const ThresholdPolicy &policy) {
   }
   if (policy.startup_lock_timeout_ns < kMinimumStartupLockTimeoutNs ||
       policy.startup_lock_timeout_ns > kMaximumStartupLockTimeoutNs) {
-    throw ConfigError(
-        "threshold.startup_lock_timeout_ns must be in [250000000, 3000000000]");
+    throw ConfigError("threshold.startup_lock_timeout_ns must be in "
+                      "[250000000, 120000000000]");
   }
   if (policy.startup_lock_timeout_ns < policy.max_sample_age_ns ||
       policy.startup_lock_timeout_ns < policy.max_authority_age_ns) {
