@@ -916,14 +916,14 @@ void testSimulationIdentityAuthorityAndEvents() {
         "a new Core-started process may begin the next persisted epoch");
 
   guard::SessionClockGuard source_rollback(parse(simulationConfig()), 12U,
-                                            1000000000ULL, 5000000000ULL);
+                                           1000000000ULL, 5000000000ULL);
   check(source_rollback.observeGazeboClock(
             gazeboClock(1020000000ULL, 1020000000ULL, 5020000000ULL), &reason),
         "source rollback test authority must start");
   check(source_rollback
             .observe(observation("px4-01", "uav1",
-                                 guard::SourceDomain::Simulation,
-                                 1020000000ULL, 1021000000ULL, 5021000000ULL))
+                                 guard::SourceDomain::Simulation, 1020000000ULL,
+                                 1021000000ULL, 5021000000ULL))
             .accepted,
         "source rollback test must accept its first pose");
   const auto rollback = source_rollback.observe(
