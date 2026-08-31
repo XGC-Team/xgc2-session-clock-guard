@@ -861,6 +861,16 @@ void testSimulationIdentityAuthorityAndEvents() {
             first.jitter_ns == 0U && first.uncertainty_ns == 6000000ULL,
         "identity mapping must report zero affine error and retain uncertainty "
         "floor");
+  const auto duplicate_pose = clock_guard.observe(
+      observation("px4-01", "uav1", guard::SourceDomain::Simulation,
+                  1010000000ULL, 1011500000ULL, 5011500000ULL));
+  check(!duplicate_pose.accepted &&
+            duplicate_pose.state == guard::GuardState::Initializing &&
+            duplicate_pose.reason.find("duplicate source timestamp ignored") !=
+                std::string::npos &&
+            clock_guard.routeStatus("px4-01").consecutive_failures == 0U,
+        "an exact same-stream VRPN duplicate must be dropped without losing "
+        "or degrading the epoch");
   const auto first_twist = clock_guard.observe(observation(
       "px4-01", "uav1", guard::SourceDomain::Simulation, 1010000000ULL,
       1012000000ULL, 5012000000ULL, guard::StreamKind::Twist));
@@ -904,6 +914,26 @@ void testSimulationIdentityAuthorityAndEvents() {
   check(restarted.epoch() == 11U &&
             restarted.aggregateState() == guard::GuardState::Initializing,
         "a new Core-started process may begin the next persisted epoch");
+
+  guard::SessionClockGuard source_rollback(parse(simulationConfig()), 12U,
+                                            1000000000ULL, 5000000000ULL);
+  check(source_rollback.observeGazeboClock(
+            gazeboClock(1020000000ULL, 1020000000ULL, 5020000000ULL), &reason),
+        "source rollback test authority must start");
+  check(source_rollback
+            .observe(observation("px4-01", "uav1",
+                                 guard::SourceDomain::Simulation,
+                                 1020000000ULL, 1021000000ULL, 5021000000ULL))
+            .accepted,
+        "source rollback test must accept its first pose");
+  const auto rollback = source_rollback.observe(
+      observation("px4-01", "uav1", guard::SourceDomain::Simulation,
+                  1019000000ULL, 1022000000ULL, 5022000000ULL));
+  check(!rollback.accepted && rollback.state == guard::GuardState::Lost &&
+            rollback.reason.find("source timestamp moved backwards") !=
+                std::string::npos,
+        "a true same-stream VRPN timestamp rollback must still hard-lose the "
+        "epoch");
 }
 
 void testAuthorityAgeAndSkewFailClosed() {

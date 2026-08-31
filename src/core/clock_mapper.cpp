@@ -338,9 +338,11 @@ TimestampEnvelope ClockMapper::observe(const Observation &observation) {
     return reject(observation,
                   "zero source timestamp is invalid after stream start", true);
   }
-  if (timeline.seen && observation.raw_source_stamp_ns <= timeline.raw_ns) {
-    return reject(observation, "source timestamp repeated or moved backwards",
-                  true);
+  if (timeline.seen && observation.raw_source_stamp_ns == timeline.raw_ns) {
+    return rejectedEnvelope(observation, "duplicate source timestamp ignored");
+  }
+  if (timeline.seen && observation.raw_source_stamp_ns < timeline.raw_ns) {
+    return reject(observation, "source timestamp moved backwards", true);
   }
   if (timeline.seen &&
       observation.receive_monotonic_stamp_ns <= timeline.monotonic_ns) {

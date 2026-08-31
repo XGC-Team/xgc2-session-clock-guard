@@ -101,9 +101,13 @@ Prediction age is enforced once a complete prior affine fit has been committed,
 and every observation after lock remains subject to the full frozen gates.
 
 Pose and twist have independent source and receipt timelines because one VRPN
-sample may stamp both streams identically. Source repetition/rollback within a
-stream is hard loss. Receipt and silence age use only steady time. A wall timer
-polls both timelines, preventing a silent route from remaining locked.
+sample may stamp both streams identically. A VRPN producer may also emit an
+exact same-stream duplicate at one Gazebo step; the Guard drops that duplicate
+without counting freshness or a healthy sample. A strictly lower same-stream
+stamp remains a hard epoch loss. Receipt and silence age use only the last
+accepted unique sample and steady time, so replaying duplicates cannot keep a
+silent route alive. A wall timer polls both timelines, preventing a silent
+route from remaining locked.
 Each unseen pose/twist timeline initially uses the same startup-lock timeout;
 once that individual timeline is seen, it immediately uses
 `max_sample_age_ns`. Thus ROS graph connection startup has a bounded admission
